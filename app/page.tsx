@@ -1,5 +1,6 @@
 import { getRecentDigests } from "@/lib/storage";
 import { NewsFeed } from "@/components/NewsFeed";
+import { RunAggregationButton } from "@/components/RunAggregationButton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,12 +10,15 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{"Today's News"}</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          AI-aggregated news from diverse sources — factual, balanced, unbiased.
-          Updated at 8 AM, 2 PM, and 8 PM.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{"Today's News"}</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            AI-aggregated news from diverse sources — factual, balanced, unbiased.
+            Updated at 8 AM, 2 PM, and 8 PM.
+          </p>
+        </div>
+        <RunAggregationButton />
       </div>
       <NewsFeed digests={digests} />
     </div>
