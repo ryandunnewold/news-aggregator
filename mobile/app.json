@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "NewsLens",
+    "slug": "news-aggregator-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "newslens",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dunnewold.newslens"
+    },
+    "android": {
+      "package": "com.dunnewold.newslens"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
