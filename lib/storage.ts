@@ -9,15 +9,18 @@ import { DEFAULT_CATEGORIES } from "./types";
 // In-memory fallback for development
 const memStore: Record<string, string> = {};
 
-async function kvGet(key: string): Promise<string | null> {
+async function kvGet<T>(key: string): Promise<T | null> {
   if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
     const { kv } = await import("@vercel/kv");
-    return kv.get<string>(key);
+    // Vercel KV auto-deserializes JSON, so we get back the original object
+    return kv.get<T>(key);
   }
-  return memStore[key] ?? null;
+  const raw = memStore[key];
+  if (raw == null) return null;
+  return JSON.parse(raw) as T;
 }
 
-async function kvSet(key: string, value: string, ttlSeconds?: number): Promise<void> {
+async function kvSet(key: string, value: unknown, ttlSeconds?: number): Promise<void> {
   if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
     const { kv } = await import("@vercel/kv");
     if (ttlSeconds) {
@@ -27,7 +30,7 @@ async function kvSet(key: string, value: string, ttlSeconds?: number): Promise<v
     }
     return;
   }
-  memStore[key] = value;
+  memStore[key] = JSON.stringify(value);
 }
 
 // Digest TTL: 30 days
@@ -38,13 +41,11 @@ export function digestKey(date: string, period: string): string {
 }
 
 export async function saveDigest(digest: NewsDigest): Promise<void> {
-  await kvSet(digestKey(digest.date, digest.period), JSON.stringify(digest), DIGEST_TTL);
+  await kvSet(digestKey(digest.date, digest.period), digest, DIGEST_TTL);
 }
 
 export async function getDigest(date: string, period: string): Promise<NewsDigest | null> {
-  const raw = await kvGet(digestKey(date, period));
-  if (!raw) return null;
-  return JSON.parse(raw) as NewsDigest;
+  return kvGet<NewsDigest>(digestKey(date, period));
 }
 
 export async function getRecentDigests(days = 7): Promise<NewsDigest[]> {
@@ -74,11 +75,10 @@ export async function getLatestDigest(): Promise<NewsDigest | null> {
 const SETTINGS_KEY = "settings:global";
 
 export async function getSettings(): Promise<UserSettings> {
-  const raw = await kvGet(SETTINGS_KEY);
-  if (!raw) return { categories: DEFAULT_CATEGORIES };
-  return JSON.parse(raw) as UserSettings;
+  const stored = await kvGet<UserSettings>(SETTINGS_KEY);
+  return stored ?? { categories: DEFAULT_CATEGORIES };
 }
 
 export async function saveSettings(settings: UserSettings): Promise<void> {
-  await kvSet(SETTINGS_KEY, JSON.stringify(settings));
+  await kvSet(SETTINGS_KEY, settings);
 }
