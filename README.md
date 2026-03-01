@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NewsLens
+
+AI-powered news aggregator that fetches top stories three times a day, sources perspectives from across the political spectrum, and delivers a balanced, factual summary with links to all original sources.
+
+## Features
+
+- **3x daily digests** — Morning (8 AM), Midday (2 PM), Evening (8 PM)
+- **AI aggregation** — Claude reads articles from dozens of sources and extracts key facts
+- **Multi-perspective reporting** — Each story shows viewpoints from different political and editorial angles
+- **Source transparency** — Every claim links back to the original article
+- **Category filtering** — Choose which topics to include (tech, politics, world, business, etc.)
+- **Zero editorializing** — Strictly factual, neutral language
+
+## Tech Stack
+
+- **Next.js 15** (App Router)
+- **Claude AI** (Anthropic) — story aggregation and balanced reporting
+- **NewsAPI** — headline fetching from 80,000+ news sources
+- **Vercel KV** (Redis) — digest storage
+- **Vercel Cron Jobs** — scheduled digest generation
+- **Tailwind CSS v4 + shadcn/ui** — UI components
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone and install
+
+```bash
+git clone <repo-url> news-aggregator
+cd news-aggregator
+npm install
+```
+
+### 2. Set up environment variables
+
+```bash
+cp .env.local.example .env.local
+```
+
+Fill in:
+
+| Variable | Where to get it |
+|---|---|
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
+| `NEWS_API_KEY` | [newsapi.org/register](https://newsapi.org/register) (free) |
+| `KV_REST_API_URL` | Vercel KV dashboard (see below) |
+| `KV_REST_API_TOKEN` | Vercel KV dashboard |
+| `CRON_SECRET` | Any random string |
+| `ADMIN_SECRET` | Any random string |
+
+### 3. Set up Vercel KV (local dev)
+
+For local development, you can skip KV — the app uses an in-memory store as a fallback. Digests won't persist between restarts, but everything else works.
+
+For production, create a KV store in your Vercel dashboard and link it to your project.
+
+### 4. Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 5. Manually trigger a digest (for testing)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+curl -X POST http://localhost:3000/api/digest \
+  -H "Content-Type: application/json" \
+  -d '{"secret": "your-admin-secret", "period": "morning", "force": true}'
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploying to Vercel
 
-## Learn More
+1. Push to GitHub
+2. Import the repo in Vercel
+3. Add environment variables in the Vercel dashboard
+4. Create a KV store and link it to the project
+5. Deploy
 
-To learn more about Next.js, take a look at the following resources:
+The `vercel.json` cron configuration will automatically schedule the three daily digests.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Cron Schedule
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Digest | Time | Endpoint |
+|---|---|---|
+| Morning | 8:00 AM UTC | `/api/cron/morning` |
+| Midday | 2:00 PM UTC | `/api/cron/midday` |
+| Evening | 8:00 PM UTC | `/api/cron/evening` |
 
-## Deploy on Vercel
+> **Note:** Vercel Cron Jobs run in UTC. Adjust the schedule in `vercel.json` if needed for your timezone.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API Reference
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### `GET /api/news`
+Returns recent digests (last 7 days by default).
+
+Query params:
+- `days` — number of days to fetch (max 30)
+- `date` + `period` — fetch a specific digest
+
+### `POST /api/settings`
+Update category preferences.
+
+```json
+{ "categories": ["general", "technology", "politics"] }
+```
+
+### `POST /api/digest`
+Manually trigger digest generation (requires `ADMIN_SECRET`).
+
+```json
+{ "secret": "...", "period": "morning", "force": false }
+```
