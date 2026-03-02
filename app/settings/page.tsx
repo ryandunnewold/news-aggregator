@@ -1,7 +1,5 @@
 import { getSettings } from "@/lib/storage";
 import { CategorySettings } from "@/components/CategorySettings";
-import { Clock, Sun, CloudSun, Moon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -9,94 +7,144 @@ export default async function SettingsPage() {
   const settings = await getSettings();
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground text-sm mt-1">
+    <div style={{ maxWidth: "600px" }}>
+      {/* Page header */}
+      <div
+        style={{
+          paddingBottom: "32px",
+          marginBottom: "32px",
+          borderBottom: "1px solid #e8e4dc",
+        }}
+      >
+        <h1
+          style={{
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            fontSize: "clamp(22px, 3vw, 28px)",
+            fontWeight: 400,
+            color: "#1a1a18",
+            marginBottom: "8px",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Settings
+        </h1>
+        <p style={{ fontSize: "13px", color: "#9e9a90", margin: 0 }}>
           Customize your news digest preferences.
         </p>
       </div>
 
-      <CategorySettings initialCategories={settings.categories} />
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        <CategorySettings initialCategories={settings.categories} />
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            <CardTitle>Digest Schedule</CardTitle>
+        {/* Schedule info */}
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e8e4dc",
+            borderRadius: "12px",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ padding: "24px 24px 20px", borderBottom: "1px solid #e8e4dc" }}>
+            <h2
+              style={{
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                fontSize: "18px",
+                fontWeight: 400,
+                color: "#1a1a18",
+                marginBottom: "6px",
+              }}
+            >
+              Digest Schedule
+            </h2>
+            <p style={{ fontSize: "13px", color: "#6b6860", margin: 0 }}>
+              News digests are automatically generated three times a day.
+            </p>
           </div>
-          <CardDescription>
-            News digests are automatically generated three times a day.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+          <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
-              {
-                icon: <Sun className="h-4 w-4 text-amber-500" />,
-                label: "Morning Briefing",
-                time: "8:00 AM",
-                description: "Start your day with the top overnight and early morning stories.",
-              },
-              {
-                icon: <CloudSun className="h-4 w-4 text-sky-500" />,
-                label: "Midday Update",
-                time: "2:00 PM",
-                description: "Catch up on developments from the morning.",
-              },
-              {
-                icon: <Moon className="h-4 w-4 text-indigo-500" />,
-                label: "Evening Wrap-Up",
-                time: "8:00 PM",
-                description: "Review the day's most significant stories.",
-              },
+              { symbol: "☀", label: "Morning Briefing", time: "8:00 AM CT", desc: "Start your day with the top overnight and early morning stories." },
+              { symbol: "◐", label: "Midday Update", time: "2:00 PM CT", desc: "Catch up on developments from the morning." },
+              { symbol: "◑", label: "Evening Wrap-Up", time: "8:00 PM CT", desc: "Review the day's most significant stories." },
             ].map((item) => (
               <div
                 key={item.label}
-                className="flex items-start gap-3 p-3 rounded-lg bg-muted/30"
+                style={{
+                  display: "flex",
+                  gap: "14px",
+                  padding: "14px",
+                  borderRadius: "8px",
+                  background: "#faf8f4",
+                  alignItems: "flex-start",
+                }}
               >
-                <div className="mt-0.5">{item.icon}</div>
+                <span style={{ fontSize: "16px", color: "#9e9a90", marginTop: "1px" }}>{item.symbol}</span>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{item.label}</span>
-                    <span className="text-xs text-muted-foreground">{item.time}</span>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "3px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a18" }}>{item.label}</span>
+                    <span style={{ fontSize: "12px", color: "#9e9a90" }}>{item.time}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {item.description}
-                  </p>
+                  <p style={{ fontSize: "13px", color: "#6b6860", margin: 0 }}>{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">How It Works</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>
-            <strong className="text-foreground">1. Fetch</strong> — NewsLens pulls
-            top headlines from dozens of sources across the political spectrum,
-            including left-leaning, centrist, and right-leaning outlets.
-          </p>
-          <p>
-            <strong className="text-foreground">2. Aggregate</strong> — Claude AI
-            groups articles into story clusters and identifies the key facts,
-            filtering out editorial opinion.
-          </p>
-          <p>
-            <strong className="text-foreground">3. Balance</strong> — For each story,
-            Claude surfaces perspectives from different viewpoints so you see the full
-            picture.
-          </p>
-          <p>
-            <strong className="text-foreground">4. Cite</strong> — Every claim links
-            back to the original source, so you can read the full article yourself.
-          </p>
-        </CardContent>
-      </Card>
+        {/* How it works */}
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e8e4dc",
+            borderRadius: "12px",
+            padding: "24px",
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: "16px",
+              fontWeight: 400,
+              color: "#1a1a18",
+              marginBottom: "16px",
+            }}
+          >
+            How It Works
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {[
+              { n: "1", title: "Fetch", body: "NewsLens pulls top headlines from dozens of sources across the political spectrum, including left-leaning, centrist, and right-leaning outlets." },
+              { n: "2", title: "Aggregate", body: "Claude AI groups articles into story clusters and identifies the key facts, filtering out editorial opinion." },
+              { n: "3", title: "Balance", body: "For each story, Claude surfaces perspectives from different viewpoints so you see the full picture." },
+              { n: "4", title: "Cite", body: "Every claim links back to the original source, so you can read the full article yourself." },
+            ].map((step) => (
+              <div key={step.n} style={{ display: "flex", gap: "14px" }}>
+                <span
+                  style={{
+                    flexShrink: 0,
+                    width: "22px",
+                    height: "22px",
+                    borderRadius: "50%",
+                    background: "#f0ede8",
+                    color: "#6b6860",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    marginTop: "1px",
+                  }}
+                >
+                  {step.n}
+                </span>
+                <p style={{ fontSize: "14px", color: "#6b6860", margin: 0, lineHeight: 1.65 }}>
+                  <strong style={{ color: "#1a1a18", fontWeight: 600 }}>{step.title}</strong> — {step.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

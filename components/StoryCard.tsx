@@ -1,17 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import type { AggregatedStory } from "@/lib/types";
 import { ALL_CATEGORIES } from "@/lib/types";
 
@@ -20,116 +10,258 @@ interface StoryCardProps {
   index: number;
 }
 
+// Accent colors keyed by index for visual variety
+const ACCENT_COLORS = [
+  "#e66a1e", // orange
+  "#2a6496", // blue
+  "#2a9d5c", // green
+  "#c8a930", // gold
+  "#1a2b5c", // navy
+  "#b01c2e", // red
+  "#7b5ea7", // purple
+  "#4a7c59", // forest
+];
 
 export function StoryCard({ story, index }: StoryCardProps) {
   const [expanded, setExpanded] = useState(false);
   const categoryLabel =
     ALL_CATEGORIES.find((c) => c.value === story.category)?.label ??
     story.category;
+  const accent = ACCENT_COLORS[index % ACCENT_COLORS.length];
 
   return (
-    <Card className="overflow-hidden">
-      {story.imageUrl && (
-        <div className="h-48 w-full overflow-hidden bg-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={story.imageUrl}
-            alt={story.headline}
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
-        </div>
-      )}
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="text-xs font-mono text-muted-foreground">
-                #{index + 1}
-              </span>
-              <Badge variant="secondary" className="text-xs">
-                {categoryLabel}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {story.sources.length} source{story.sources.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <CardTitle className="text-lg leading-snug">{story.headline}</CardTitle>
-          </div>
-        </div>
-        <CardDescription className="text-sm leading-relaxed mt-2">
-          {story.summary}
-        </CardDescription>
-      </CardHeader>
+    <article
+      style={{
+        background: "#ffffff",
+        border: "1px solid #e8e4dc",
+        borderRadius: "12px",
+        overflow: "hidden",
+      }}
+    >
+      {/* Accent bar */}
+      <div style={{ height: "3px", background: accent }} />
 
-      <CardContent className="pt-0">
+      <div className="p-6">
+        {/* Category + source count */}
+        <div className="flex items-center justify-between mb-3">
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "#9e9a90",
+            }}
+          >
+            {categoryLabel}
+          </span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "12px",
+              fontWeight: 500,
+              color: "#6b6860",
+              background: "#ffffff",
+              border: "1px solid #e8e4dc",
+              borderRadius: "100px",
+              padding: "4px 12px",
+            }}
+          >
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                background: "#2a9d5c",
+                display: "inline-block",
+              }}
+            />
+            {story.sources.length} source{story.sources.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h2
+          style={{
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            fontSize: "clamp(18px, 2.5vw, 22px)",
+            fontWeight: 400,
+            lineHeight: 1.3,
+            color: "#1a1a18",
+            marginBottom: "12px",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {story.headline}
+        </h2>
+
+        {/* Summary */}
+        <p
+          style={{
+            fontSize: "15px",
+            lineHeight: 1.7,
+            color: "#6b6860",
+            marginBottom: "20px",
+          }}
+        >
+          {story.summary}
+        </p>
+
         {/* Key Facts */}
-        <div className="mb-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-            <BookOpen className="h-3 w-3" />
+        <div style={{ marginBottom: "16px" }}>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#9e9a90",
+              marginBottom: "12px",
+            }}
+          >
             Key Facts
-          </h4>
-          <ul className="space-y-1">
+          </div>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {story.keyFacts.slice(0, expanded ? undefined : 3).map((fact, i) => (
-              <li key={i} className="flex gap-2 text-sm">
-                <span className="text-muted-foreground mt-0.5">•</span>
+              <li
+                key={i}
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  padding: "10px 0",
+                  borderBottom: "1px solid #e8e4dc",
+                  fontSize: "14px",
+                  lineHeight: 1.6,
+                  color: "#1a1a18",
+                }}
+              >
+                <span
+                  style={{
+                    flexShrink: 0,
+                    width: "20px",
+                    height: "20px",
+                    borderRadius: "50%",
+                    background: "#e8f5ee",
+                    color: "#2a9d5c",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    marginTop: "1px",
+                  }}
+                >
+                  ✓
+                </span>
                 <span>{fact}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Expand/collapse */}
-        <Button
-          variant="ghost"
-          size="sm"
+        {/* Expand / collapse button */}
+        <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full mb-3 h-8 text-xs text-muted-foreground hover:text-foreground"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: "13px",
+            fontWeight: 500,
+            color: "#6b6860",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "6px 0",
+            marginBottom: expanded ? "20px" : "0",
+          }}
         >
           {expanded ? (
-            <>
-              <ChevronUp className="h-3.5 w-3.5 mr-1" />
-              Show less
-            </>
+            <ChevronUp style={{ width: "14px", height: "14px" }} />
           ) : (
-            <>
-              <ChevronDown className="h-3.5 w-3.5 mr-1" />
-              See perspectives & sources
-            </>
+            <ChevronDown style={{ width: "14px", height: "14px" }} />
           )}
-        </Button>
+          {expanded ? "Show less" : "See perspectives & sources"}
+        </button>
 
         {expanded && (
-          <>
-            <Separator className="mb-4" />
-
+          <div>
             {/* Perspectives */}
             {story.perspectives.length > 0 && (
-              <div className="mb-4">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              <div style={{ marginBottom: "20px" }}>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "#9e9a90",
+                    marginBottom: "12px",
+                  }}
+                >
                   Perspectives
-                </h4>
-                <div className="space-y-3">
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {story.perspectives.map((p, i) => (
                     <div
                       key={i}
-                      className="rounded-lg border bg-muted/30 p-3"
+                      style={{
+                        borderLeft: `3px solid ${ACCENT_COLORS[i % ACCENT_COLORS.length]}`,
+                        paddingLeft: "14px",
+                        paddingTop: "8px",
+                        paddingBottom: "8px",
+                        background: "#faf8f4",
+                        borderRadius: "0 8px 8px 0",
+                      }}
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-semibold">{p.label}</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            color: "#1a1a18",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                          }}
+                        >
+                          {p.label}
+                        </span>
                         <a
                           href={p.sourceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 shrink-0"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            fontSize: "12px",
+                            color: "#9e9a90",
+                            textDecoration: "none",
+                          }}
                         >
                           {p.sourceName}
-                          <ExternalLink className="h-3 w-3" />
+                          <ExternalLink style={{ width: "11px", height: "11px" }} />
                         </a>
                       </div>
-                      <p className="text-sm text-muted-foreground">{p.description}</p>
+                      <p
+                        style={{
+                          fontSize: "14px",
+                          lineHeight: 1.65,
+                          color: "#6b6860",
+                          margin: 0,
+                        }}
+                      >
+                        {p.description}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -138,27 +270,49 @@ export function StoryCard({ story, index }: StoryCardProps) {
 
             {/* Sources */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "#9e9a90",
+                  marginBottom: "10px",
+                }}
+              >
                 Sources
-              </h4>
-              <div className="flex flex-wrap gap-2">
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {story.sources.map((s, i) => (
                   <a
                     key={i}
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      fontSize: "12px",
+                      fontWeight: 500,
+                      color: "#1a1a18",
+                      padding: "6px 14px",
+                      borderRadius: "100px",
+                      border: "1px solid #e8e4dc",
+                      background: "#ffffff",
+                      textDecoration: "none",
+                      transition: "border-color 0.2s ease",
+                    }}
                   >
                     {s.name}
-                    <ExternalLink className="h-2.5 w-2.5" />
+                    <ExternalLink style={{ width: "10px", height: "10px", color: "#9e9a90" }} />
                   </a>
                 ))}
               </div>
             </div>
-          </>
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   );
 }

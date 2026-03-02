@@ -1,34 +1,57 @@
-import { Newspaper, Clock } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { PERIOD_LABELS, PERIOD_TIMES } from "@/lib/types";
 
 export function EmptyFeed() {
   return (
-    <div className="space-y-6">
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <Newspaper className="h-12 w-12 text-muted-foreground/40 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No digests yet</h3>
-          <p className="text-sm text-muted-foreground max-w-sm mb-6">
-            News digests are automatically generated three times a day. The first
-            digest will appear here once generated.
-          </p>
-          <div className="grid grid-cols-3 gap-4 w-full max-w-sm">
-            {(["morning", "midday", "evening"] as const).map((period) => (
-              <div
-                key={period}
-                className="flex flex-col items-center p-3 rounded-lg bg-muted/50"
-              >
-                <span className="text-xs font-medium">{PERIOD_LABELS[period]}</span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                  <Clock className="h-3 w-3" />
-                  {PERIOD_TIMES[period]}
-                </span>
-              </div>
-            ))}
+    <div
+      style={{
+        border: "1px dashed #e8e4dc",
+        borderRadius: "12px",
+        padding: "64px 40px",
+        textAlign: "center",
+      }}
+    >
+      <p
+        style={{
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontSize: "20px",
+          color: "#1a1a18",
+          marginBottom: "12px",
+          fontWeight: 400,
+        }}
+      >
+        No digests yet
+      </p>
+      <p style={{ fontSize: "14px", color: "#6b6860", marginBottom: "32px", maxWidth: "360px", margin: "0 auto 32px" }}>
+        News digests are automatically generated three times a day. The first
+        digest will appear here once generated.
+      </p>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        {(["morning", "midday", "evening"] as const).map((period) => (
+          <div
+            key={period}
+            style={{
+              padding: "10px 18px",
+              borderRadius: "100px",
+              border: "1px solid #e8e4dc",
+              background: "#ffffff",
+            }}
+          >
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "#1a1a18", display: "block" }}>
+              {PERIOD_LABELS[period]}
+            </span>
+            <span style={{ fontSize: "11px", color: "#9e9a90" }}>
+              {PERIOD_TIMES[period]}
+            </span>
           </div>
-        </CardContent>
-      </Card>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,7 +17,6 @@ export function RunAggregationButton() {
         toast.success(
           `Aggregation complete — ${data.storiesGenerated} stories generated (${data.period})`
         );
-        // Reload the page so the new digest appears
         window.location.reload();
       } else {
         toast.error(data.error ?? "Aggregation failed");
@@ -31,15 +29,35 @@ export function RunAggregationButton() {
   }
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
+    <button
       onClick={handleRun}
       disabled={loading}
-      className="gap-1.5"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        fontSize: "13px",
+        fontWeight: 500,
+        color: loading ? "#9e9a90" : "#1a1a18",
+        background: "#ffffff",
+        border: "1px solid #e8e4dc",
+        borderRadius: "100px",
+        padding: "8px 18px",
+        cursor: loading ? "not-allowed" : "pointer",
+        transition: "border-color 0.2s ease",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+      }}
     >
-      <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+      <RefreshCw
+        style={{
+          width: "13px",
+          height: "13px",
+          animation: loading ? "spin 1s linear infinite" : "none",
+        }}
+      />
       {loading ? "Running…" : "Run Now"}
-    </Button>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </button>
   );
 }
