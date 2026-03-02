@@ -89,7 +89,7 @@ export const PERIOD_LABELS: Record<DigestPeriod, string> = {
 };
 
 export const PERIOD_TIMES: Record<DigestPeriod, string> = {
-  morning: "8:00 AM",
-  midday: "2:00 PM",
-  evening: "8:00 PM",
+  morning: "8:00 AM CT",
+  midday: "2:00 PM CT",
+  evening: "8:00 PM CT",
 };
