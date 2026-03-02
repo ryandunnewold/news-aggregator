@@ -3,13 +3,14 @@ import type { NewsDigest, NewsCategory, DigestPeriod } from "./types";
 import { fetchTopHeadlines } from "./news";
 import { aggregateNewsStories } from "./claude";
 import { saveDigest, getDigest } from "./storage";
+import { getTodayInUserTZ } from "./timezone";
 
 export async function generateDigest(
   categories: NewsCategory[],
   period: DigestPeriod,
   force = false
 ): Promise<NewsDigest> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayInUserTZ();
 
   // Check if digest already exists for this period
   if (!force) {

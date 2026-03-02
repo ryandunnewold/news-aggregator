@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateDigest } from "@/lib/digest";
 import { getSettings } from "@/lib/storage";
 import type { DigestPeriod } from "@/lib/types";
+import { getCurrentHourInUserTZ } from "@/lib/timezone";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
 }
 
 function currentPeriod(): DigestPeriod {
-  const hour = new Date().getHours();
+  const hour = getCurrentHourInUserTZ();
   if (hour < 12) return "morning";
   if (hour < 18) return "midday";
   return "evening";
