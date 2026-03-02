@@ -2,17 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Settings2, Check } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { ALL_CATEGORIES, DEFAULT_CATEGORIES } from "@/lib/types";
 import type { NewsCategory } from "@/lib/types";
 
@@ -30,7 +19,7 @@ export function CategorySettings({ initialCategories }: CategorySettingsProps) {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(cat)) {
-        if (next.size <= 1) return prev; // Keep at least one
+        if (next.size <= 1) return prev;
         next.delete(cat);
       } else {
         next.add(cat);
@@ -62,69 +51,135 @@ export function CategorySettings({ initialCategories }: CategorySettingsProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <Settings2 className="h-5 w-5" />
-          <CardTitle>News Categories</CardTitle>
-        </div>
-        <CardDescription>
+    <div
+      style={{
+        background: "#ffffff",
+        border: "1px solid #e8e4dc",
+        borderRadius: "12px",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ padding: "24px 24px 20px", borderBottom: "1px solid #e8e4dc" }}>
+        <h2
+          style={{
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            fontSize: "18px",
+            fontWeight: 400,
+            color: "#1a1a18",
+            marginBottom: "6px",
+          }}
+        >
+          News Categories
+        </h2>
+        <p style={{ fontSize: "13px", color: "#6b6860", margin: 0 }}>
           Choose which categories to include in your news digests. At least one
           category must be selected.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        </p>
+      </div>
+
+      <div style={{ padding: "20px 24px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+            gap: "8px",
+            marginBottom: "20px",
+          }}
+        >
           {ALL_CATEGORIES.map(({ value, label }) => {
             const isChecked = selected.has(value);
             return (
-              <div
+              <button
                 key={value}
-                className={`flex items-center space-x-2.5 rounded-lg border p-3 cursor-pointer transition-colors ${
-                  isChecked
-                    ? "border-primary/50 bg-primary/5"
-                    : "border-border hover:bg-muted/50"
-                }`}
                 onClick={() => toggle(value)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  border: isChecked ? "1px solid #1a1a18" : "1px solid #e8e4dc",
+                  background: isChecked ? "#1a1a18" : "#ffffff",
+                  color: isChecked ? "#faf8f4" : "#1a1a18",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  textAlign: "left",
+                  transition: "all 0.15s ease",
+                }}
               >
-                <Checkbox
-                  id={value}
-                  checked={isChecked}
-                  onCheckedChange={() => toggle(value)}
-                  className="pointer-events-none"
-                />
-                <Label
-                  htmlFor={value}
-                  className="cursor-pointer font-medium text-sm"
+                <span
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    borderRadius: "4px",
+                    border: isChecked ? "1px solid rgba(250,248,244,0.4)" : "1px solid #e8e4dc",
+                    background: isChecked ? "rgba(250,248,244,0.2)" : "#faf8f4",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    fontSize: "10px",
+                    color: isChecked ? "#faf8f4" : "transparent",
+                  }}
                 >
-                  {label}
-                </Label>
-              </div>
+                  ✓
+                </span>
+                {label}
+              </button>
             );
           })}
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <Button variant="ghost" size="sm" onClick={reset}>
-            Reset to defaults
-          </Button>
-          <Button onClick={save} disabled={isPending}>
-            {isPending ? (
-              "Saving..."
-            ) : (
-              <>
-                <Check className="h-4 w-4 mr-1.5" />
-                Save settings
-              </>
-            )}
-          </Button>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingTop: "12px",
+            borderTop: "1px solid #e8e4dc",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <button
+              onClick={reset}
+              style={{
+                fontSize: "13px",
+                color: "#6b6860",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0",
+              }}
+            >
+              Reset to defaults
+            </button>
+            <span style={{ fontSize: "12px", color: "#9e9a90" }}>
+              {selected.size} of {ALL_CATEGORIES.length} selected
+            </span>
+          </div>
+          <button
+            onClick={save}
+            disabled={isPending}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#faf8f4",
+              background: isPending ? "#6b6860" : "#1a1a18",
+              border: "none",
+              borderRadius: "100px",
+              padding: "8px 20px",
+              cursor: isPending ? "not-allowed" : "pointer",
+              transition: "background 0.2s ease",
+            }}
+          >
+            {isPending ? "Saving…" : "Save settings"}
+          </button>
         </div>
-
-        <p className="text-xs text-muted-foreground">
-          {selected.size} of {ALL_CATEGORIES.length} categories selected. Changes take
-          effect on the next scheduled digest.
-        </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
