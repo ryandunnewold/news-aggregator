@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { StoryNarrativeView } from "@/components/StoryNarrativeView";
 import { EmptyFeed } from "@/components/EmptyFeed";
-import type { AggregatedStory, NewsDigest } from "@/lib/types";
+import type { AggregatedStory, DigestPeriod, NewsDigest } from "@/lib/types";
 
 const READ_KEY = "newsagg:read-stories";
 
@@ -41,11 +41,18 @@ function writeReadIds(ids: Set<string>): void {
 interface StoryWithId {
   id: string;
   story: AggregatedStory;
+  digestDate: string;
+  digestPeriod: DigestPeriod;
 }
 
 function flattenStories(digests: NewsDigest[]): StoryWithId[] {
   return digests.flatMap((digest) =>
-    digest.stories.map((story, i) => ({ id: `${digest.id}-${i}`, story }))
+    digest.stories.map((story, i) => ({
+      id: `${digest.id}-${i}`,
+      story,
+      digestDate: digest.date,
+      digestPeriod: digest.period,
+    }))
   );
 }
 
@@ -84,6 +91,11 @@ export function StoryReader({ digests }: StoryReaderProps) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStory, readIds]);
 
+  // Skip works the same as mark-as-read: advances to the next story
+  const handleSkip = useCallback(() => {
+    handleMarkRead();
+  }, [handleMarkRead]);
+
   const handleReset = useCallback(() => {
     writeReadIds(new Set());
   }, []);
@@ -108,7 +120,10 @@ export function StoryReader({ digests }: StoryReaderProps) {
       story={currentStory.story}
       storyIndex={allStories.length - unreadStories.length}
       totalStories={allStories.length}
+      digestDate={currentStory.digestDate}
+      digestPeriod={currentStory.digestPeriod}
       onMarkRead={handleMarkRead}
+      onSkip={handleSkip}
     />
   );
 }

@@ -2,14 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
-import type { AggregatedStory } from "@/lib/types";
-import { ALL_CATEGORIES } from "@/lib/types";
+import type { AggregatedStory, DigestPeriod } from "@/lib/types";
+import { ALL_CATEGORIES, PERIOD_LABELS, PERIOD_SYMBOLS } from "@/lib/types";
+import { format, parseISO } from "date-fns";
 
 interface StoryNarrativeViewProps {
   story: AggregatedStory;
   storyIndex: number;
   totalStories: number;
+  digestDate: string;
+  digestPeriod: DigestPeriod;
   onMarkRead: () => void;
+  onSkip: () => void;
 }
 
 const ACCENT_COLORS = [
@@ -70,7 +74,10 @@ export function StoryNarrativeView({
   story,
   storyIndex,
   totalStories,
+  digestDate,
+  digestPeriod,
   onMarkRead,
+  onSkip,
 }: StoryNarrativeViewProps) {
   const categoryLabel =
     ALL_CATEGORIES.find((c) => c.value === story.category)?.label ??
@@ -79,39 +86,64 @@ export function StoryNarrativeView({
   const accentForPerspective = (i: number) =>
     ACCENT_COLORS[i % ACCENT_COLORS.length];
 
+  const formattedDate = format(parseISO(digestDate), "MMMM d, yyyy");
+
   return (
     <div
       style={{
         maxWidth: "780px",
         margin: "0 auto",
-        padding: "0 24px",
+        padding: "0 24px 100px",
       }}
     >
-      {/* Story counter */}
+      {/* ── Digest header with story counter ── */}
       <div
         style={{
-          fontSize: "11px",
-          fontWeight: 600,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: "#9e9a90",
           textAlign: "center",
-          marginBottom: "8px",
+          marginBottom: "16px",
+          padding: "0 0 20px",
+          borderBottom: "1px solid #e8e4dc",
         }}
       >
-        Story {storyIndex + 1} of {totalStories}
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "13px",
+            color: "#9e9a90",
+            marginBottom: "4px",
+          }}
+        >
+          <span style={{ fontSize: "15px" }}>{PERIOD_SYMBOLS[digestPeriod]}</span>
+          <span style={{ fontWeight: 500, color: "#6b6860" }}>
+            {PERIOD_LABELS[digestPeriod]}
+          </span>
+          <span>&middot;</span>
+          <span>{formattedDate}</span>
+        </div>
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: 600,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#9e9a90",
+            marginTop: "4px",
+          }}
+        >
+          Story {storyIndex + 1} of {totalStories}
+        </div>
       </div>
 
-      {/* ── Intro ── */}
+      {/* ── Intro with inline key facts ── */}
       <section
         style={{
-          minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
           textAlign: "center",
-          padding: "80px 0 80px",
+          padding: "48px 0 56px",
         }}
       >
         <Reveal delay={0}>
@@ -188,52 +220,65 @@ export function StoryNarrativeView({
           </p>
         </Reveal>
 
-        <div
-          style={{
-            marginTop: "48px",
-            fontSize: "13px",
-            color: "#9e9a90",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "8px",
-            animation: "hintPulse 2.5s ease-in-out infinite",
-          }}
-        >
-          Scroll to explore perspectives
-          <span style={{ fontSize: "18px" }}>↓</span>
-        </div>
-      </section>
-
-      {/* ── Key Facts ── */}
-      {story.keyFacts.length > 0 && (
-        <section
-          style={{
-            maxWidth: "640px",
-            margin: "0 auto",
-            padding: "80px 0 100px",
-          }}
-        >
-          <Reveal>
+        {/* Key facts inline after summary */}
+        {story.keyFacts.length > 0 && (
+          <Reveal delay={320}>
             <div
               style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "#9e9a90",
-                marginBottom: "40px",
+                maxWidth: "560px",
+                marginTop: "32px",
+                textAlign: "left",
               }}
             >
-              Verified Key Facts
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "#9e9a90",
+                  marginBottom: "12px",
+                }}
+              >
+                Key Facts
+              </div>
+              {story.keyFacts.map((fact, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    padding: "8px 0",
+                    borderBottom: i < story.keyFacts.length - 1 ? "1px solid #f0ece4" : "none",
+                  }}
+                >
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      width: "18px",
+                      height: "18px",
+                      borderRadius: "50%",
+                      background: "#e8f5ee",
+                      color: "#2a9d5c",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      marginTop: "2px",
+                    }}
+                  >
+                    ✓
+                  </span>
+                  <span style={{ fontSize: "14px", lineHeight: 1.5, color: "#1a1a18" }}>
+                    {fact}
+                  </span>
+                </div>
+              ))}
             </div>
           </Reveal>
-
-          {story.keyFacts.map((fact, i) => (
-            <FactItem key={i} fact={fact} delay={i * 80} />
-          ))}
-        </section>
-      )}
+        )}
+      </section>
 
       {/* ── Perspectives ── */}
       {story.perspectives.map((perspective, i) => (
@@ -244,81 +289,60 @@ export function StoryNarrativeView({
           fromRight={i % 2 !== 0}
         />
       ))}
+      {/* Sources section removed -- source links are now inline in each perspective */}
 
-      {/* ── Sources ── */}
-      {story.sources.length > 0 && (
-        <section
-          style={{
-            maxWidth: "640px",
-            margin: "0 auto",
-            padding: "60px 0 40px",
-          }}
-        >
-          <Reveal>
-            <div
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "#9e9a90",
-                marginBottom: "16px",
-              }}
-            >
-              Sources
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {story.sources.map((s, i) => (
-                <a
-                  key={i}
-                  href={s.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    color: "#1a1a18",
-                    padding: "6px 14px",
-                    borderRadius: "100px",
-                    border: "1px solid #e8e4dc",
-                    background: "#ffffff",
-                    textDecoration: "none",
-                    transition: "border-color 0.2s ease",
-                  }}
-                >
-                  {s.name}
-                  <ExternalLink style={{ width: "10px", height: "10px", color: "#9e9a90" }} />
-                </a>
-              ))}
-            </div>
-          </Reveal>
-        </section>
-      )}
-
-      {/* ── Mark as Read CTA ── */}
-      <section
+      {/* ── Sticky footer ── */}
+      <div
         style={{
-          maxWidth: "640px",
-          margin: "0 auto",
-          padding: "60px 0 100px",
-          textAlign: "center",
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: "rgba(250, 248, 244, 0.92)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
           borderTop: "1px solid #e8e4dc",
+          zIndex: 50,
+          padding: "12px 24px",
         }}
       >
-        <Reveal>
-          <p
+        <div
+          style={{
+            maxWidth: "780px",
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
+          }}
+        >
+          <button
+            onClick={onSkip}
             style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: "18px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "14px",
+              fontWeight: 600,
               color: "#6b6860",
-              marginBottom: "32px",
+              background: "transparent",
+              border: "1px solid #d4d0c8",
+              borderRadius: "100px",
+              padding: "10px 24px",
+              cursor: "pointer",
+              transition: "border-color 0.2s ease, color 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#9e9a90";
+              e.currentTarget.style.color = "#1a1a18";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "#d4d0c8";
+              e.currentTarget.style.color = "#6b6860";
             }}
           >
-            {"You've reached the end of this story."}
-          </p>
+            Skip
+          </button>
           <button
             onClick={onMarkRead}
             style={{
@@ -331,62 +355,17 @@ export function StoryNarrativeView({
               background: "#1a1a18",
               border: "none",
               borderRadius: "100px",
-              padding: "12px 28px",
+              padding: "10px 24px",
               cursor: "pointer",
               transition: "opacity 0.2s ease",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
-            Mark as Read →
+            Mark as Read
           </button>
-        </Reveal>
-      </section>
-
-      <style>{`
-        @keyframes hintPulse {
-          0%, 100% { opacity: 0.5; }
-          50% { opacity: 1; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function FactItem({ fact, delay }: { fact: string; delay: number }) {
-  const { ref, visible } = useReveal(0.2);
-  return (
-    <div
-      ref={ref}
-      style={{
-        display: "flex",
-        gap: "16px",
-        padding: "18px 0",
-        borderBottom: "1px solid #e8e4dc",
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(16px)",
-        transition: `opacity 0.6s ease ${delay}ms, transform 0.6s ease ${delay}ms`,
-      }}
-    >
-      <span
-        style={{
-          flexShrink: 0,
-          width: "22px",
-          height: "22px",
-          borderRadius: "50%",
-          background: "#e8f5ee",
-          color: "#2a9d5c",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "12px",
-          fontWeight: 700,
-          marginTop: "1px",
-        }}
-      >
-        ✓
-      </span>
-      <span style={{ fontSize: "15px", lineHeight: 1.6, color: "#1a1a18" }}>{fact}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -399,12 +378,19 @@ interface PerspectiveSectionProps {
 
 function PerspectiveSection({ perspective, accent, fromRight }: PerspectiveSectionProps) {
   const { ref, visible } = useReveal(0.1);
+  const [expanded, setExpanded] = useState(false);
+
+  // Truncate description to ~120 chars for collapsed view
+  const isLong = perspective.description.length > 120;
+  const truncated = isLong
+    ? perspective.description.slice(0, 120).replace(/\s+\S*$/, "") + "..."
+    : perspective.description;
 
   return (
     <section
       ref={ref}
       style={{
-        padding: "80px 0",
+        padding: "40px 0",
         position: "relative",
         opacity: visible ? 1 : 0,
         transform: visible
@@ -413,72 +399,43 @@ function PerspectiveSection({ perspective, accent, fromRight }: PerspectiveSecti
           ? "translateX(30px)"
           : "translateX(-30px)",
         transition: "opacity 0.7s ease, transform 0.7s ease",
+        borderTop: `2px solid ${accent}`,
       }}
     >
-      {/* Accent bar */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: "-24px",
-          right: "-24px",
-          height: "3px",
-          background: accent,
-        }}
-      />
-
       <div
         style={{
           maxWidth: "640px",
           margin: "0 auto",
-          padding: "32px 0 0",
         }}
       >
-        {/* Source header */}
-        <div style={{ marginBottom: "32px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "12px" }}>
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "10px",
-                background: accent,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 700,
-                fontSize: "13px",
-                color: "#ffffff",
-                flexShrink: 0,
-              }}
-            >
-              {perspective.sourceName
-                .split(" ")
-                .map((w) => w[0])
-                .join("")
-                .slice(0, 3)
-                .toUpperCase()}
-            </div>
-            <h2
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', serif",
-                fontSize: "24px",
-                fontWeight: 400,
-                color: "#1a1a18",
-                margin: 0,
-              }}
-            >
-              {perspective.sourceName}
-            </h2>
-          </div>
+        {/* Compact source header: name + label inline */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "10px",
+            marginBottom: "16px",
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: "18px",
+              fontWeight: 400,
+              color: "#1a1a18",
+              margin: 0,
+            }}
+          >
+            {perspective.sourceName}
+          </h2>
           <span
             style={{
-              display: "inline-block",
-              fontSize: "11px",
+              fontSize: "10px",
               fontWeight: 600,
               letterSpacing: "0.06em",
               textTransform: "uppercase",
-              padding: "4px 12px",
+              padding: "3px 10px",
               borderRadius: "100px",
               border: "1px solid #e8e4dc",
               color: "#6b6860",
@@ -487,41 +444,55 @@ function PerspectiveSection({ perspective, accent, fromRight }: PerspectiveSecti
           >
             {perspective.label}
           </span>
+          <a
+            href={perspective.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              fontSize: "12px",
+              fontWeight: 500,
+              color: "#9e9a90",
+              textDecoration: "none",
+              marginLeft: "auto",
+              transition: "color 0.2s ease",
+            }}
+          >
+            Source
+            <ExternalLink style={{ width: "11px", height: "11px" }} />
+          </a>
         </div>
 
-        {/* Body */}
+        {/* Truncated/expandable description */}
         <p
           style={{
-            fontSize: "16px",
-            lineHeight: 1.8,
+            fontSize: "15px",
+            lineHeight: 1.7,
             color: "#6b6860",
-            marginBottom: "32px",
+            margin: 0,
           }}
         >
-          {perspective.description}
+          {expanded || !isLong ? perspective.description : truncated}
+          {isLong && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#2a6496",
+                fontSize: "13px",
+                fontWeight: 500,
+                cursor: "pointer",
+                padding: "0 0 0 6px",
+                textDecoration: "none",
+              }}
+            >
+              {expanded ? "Show less" : "Read more"}
+            </button>
+          )}
         </p>
-
-        {/* Read original */}
-        <a
-          href={perspective.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "14px",
-            fontWeight: 500,
-            color: "#1a1a18",
-            textDecoration: "none",
-            padding: "10px 0",
-            borderBottom: "1px solid #e8e4dc",
-            transition: "border-color 0.2s ease",
-          }}
-        >
-          Read original article{" "}
-          <ExternalLink style={{ width: "13px", height: "13px" }} />
-        </a>
       </div>
     </section>
   );
