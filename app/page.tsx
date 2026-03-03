@@ -1,5 +1,5 @@
 import { getRecentDigests } from "@/lib/storage";
-import { NewsFeed } from "@/components/NewsFeed";
+import { StoryReader } from "@/components/StoryReader";
 import { RunAggregationButton } from "@/components/RunAggregationButton";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +44,7 @@ export default async function HomePage() {
         <RunAggregationButton />
       </div>
 
-      <NewsFeed digests={digests} />
+      <StoryReader digests={digests} />
     </div>
   );
 }
