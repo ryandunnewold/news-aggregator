@@ -33,6 +33,8 @@ export function NewsFeed({ digests }: NewsFeedProps) {
     return <EmptyFeed />;
   }
 
+  const activeDigests = byDate[activeDate] ?? [];
+
   return (
     <div>
       {/* Date selector — only shown when multiple dates exist */}
@@ -72,8 +74,8 @@ export function NewsFeed({ digests }: NewsFeedProps) {
 
       {/* Digests for active date */}
       <div style={{ display: "flex", flexDirection: "column", gap: "48px" }}>
-        {(byDate[activeDate] ?? []).map((digest) => (
-          <DigestView key={digest.id} digest={digest} />
+        {activeDigests.map((digest, idx) => (
+          <DigestView key={digest.id} digest={digest} isFirst={idx === 0 && activeDate === latestDate} />
         ))}
       </div>
     </div>
