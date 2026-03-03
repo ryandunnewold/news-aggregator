@@ -112,6 +112,17 @@
     color: #9e9a90;
   }
 
+  /* Responsive two-column grid for story body (summary + key facts) */
+  .story-body-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 600px) {
+    .story-body-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .reveal-enter {
     opacity: 0;
     transform: translateY(16px);

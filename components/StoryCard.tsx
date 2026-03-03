@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { ExternalLink, ChevronDown, ChevronUp, Check, SkipForward } from "lucide-react";
 import type { AggregatedStory } from "@/lib/types";
 import { ALL_CATEGORIES } from "@/lib/types";
 
@@ -24,10 +24,56 @@ const ACCENT_COLORS = [
 
 export function StoryCard({ story, index }: StoryCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [read, setRead] = useState(false);
+  const [skipped, setSkipped] = useState(false);
+
   const categoryLabel =
     ALL_CATEGORIES.find((c) => c.value === story.category)?.label ??
     story.category;
   const accent = ACCENT_COLORS[index % ACCENT_COLORS.length];
+
+  if (skipped) {
+    return (
+      <article
+        style={{
+          background: "#ffffff",
+          border: "1px solid #e8e4dc",
+          borderRadius: "12px",
+          overflow: "hidden",
+          opacity: 0.5,
+        }}
+      >
+        <div style={{ height: "2px", background: accent }} />
+        <div
+          style={{
+            padding: "12px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span style={{ fontSize: "13px", color: "#9e9a90", fontStyle: "italic" }}>
+            {story.headline}
+          </span>
+          <button
+            onClick={() => setSkipped(false)}
+            style={{
+              fontSize: "12px",
+              color: "#9e9a90",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              marginLeft: "16px",
+            }}
+          >
+            Show
+          </button>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article
@@ -36,13 +82,15 @@ export function StoryCard({ story, index }: StoryCardProps) {
         border: "1px solid #e8e4dc",
         borderRadius: "12px",
         overflow: "hidden",
+        opacity: read ? 0.65 : 1,
+        transition: "opacity 0.2s ease",
       }}
     >
       {/* Accent bar */}
       <div style={{ height: "3px", background: accent }} />
 
       <div className="p-6">
-        {/* Category + source count */}
+        {/* Category + source count + action buttons */}
         <div className="flex items-center justify-between mb-3">
           <span
             style={{
@@ -55,31 +103,33 @@ export function StoryCard({ story, index }: StoryCardProps) {
           >
             {categoryLabel}
           </span>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "#6b6860",
-              background: "#ffffff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "100px",
-              padding: "4px 12px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span
               style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                background: "#2a9d5c",
-                display: "inline-block",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "12px",
+                fontWeight: 500,
+                color: "#6b6860",
+                background: "#ffffff",
+                border: "1px solid #e8e4dc",
+                borderRadius: "100px",
+                padding: "4px 12px",
               }}
-            />
-            {story.sources.length} source{story.sources.length !== 1 ? "s" : ""}
-          </span>
+            >
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "#2a9d5c",
+                  display: "inline-block",
+                }}
+              />
+              {story.sources.length} source{story.sources.length !== 1 ? "s" : ""}
+            </span>
+          </div>
         </div>
 
         {/* Headline */}
@@ -90,228 +140,281 @@ export function StoryCard({ story, index }: StoryCardProps) {
             fontWeight: 400,
             lineHeight: 1.3,
             color: "#1a1a18",
-            marginBottom: "12px",
+            marginBottom: "16px",
             letterSpacing: "-0.01em",
           }}
         >
           {story.headline}
         </h2>
 
-        {/* Summary */}
-        <p
+        {/* Two-column layout: summary + key facts */}
+        <div
           style={{
-            fontSize: "15px",
-            lineHeight: 1.7,
-            color: "#6b6860",
-            marginBottom: "20px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "24px",
+            marginBottom: "16px",
           }}
+          className="story-body-grid"
         >
-          {story.summary}
-        </p>
-
-        {/* Key Facts */}
-        <div style={{ marginBottom: "16px" }}>
-          <div
+          {/* Summary */}
+          <p
             style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "#9e9a90",
-              marginBottom: "12px",
+              fontSize: "15px",
+              lineHeight: 1.7,
+              color: "#6b6860",
+              margin: 0,
             }}
           >
-            Key Facts
-          </div>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {story.keyFacts.slice(0, expanded ? undefined : 3).map((fact, i) => (
-              <li
-                key={i}
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  padding: "10px 0",
-                  borderBottom: "1px solid #e8e4dc",
-                  fontSize: "14px",
-                  lineHeight: 1.6,
-                  color: "#1a1a18",
-                }}
-              >
-                <span
+            {story.summary}
+          </p>
+
+          {/* Key Facts */}
+          <div>
+            <div
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "#9e9a90",
+                marginBottom: "8px",
+              }}
+            >
+              Key Facts
+            </div>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {story.keyFacts.map((fact, i) => (
+                <li
+                  key={i}
                   style={{
-                    flexShrink: 0,
-                    width: "20px",
-                    height: "20px",
-                    borderRadius: "50%",
-                    background: "#e8f5ee",
-                    color: "#2a9d5c",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    marginTop: "1px",
+                    gap: "8px",
+                    paddingBottom: "8px",
+                    marginBottom: "8px",
+                    borderBottom: i < story.keyFacts.length - 1 ? "1px solid #f0ece4" : "none",
+                    fontSize: "13px",
+                    lineHeight: 1.55,
+                    color: "#1a1a18",
                   }}
                 >
-                  ✓
-                </span>
-                <span>{fact}</span>
-              </li>
-            ))}
-          </ul>
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      width: "16px",
+                      height: "16px",
+                      borderRadius: "50%",
+                      background: "#e8f5ee",
+                      color: "#2a9d5c",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      marginTop: "2px",
+                    }}
+                  >
+                    ✓
+                  </span>
+                  <span>{fact}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         {/* Expand / collapse button */}
-        <button
-          onClick={() => setExpanded(!expanded)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "13px",
-            fontWeight: 500,
-            color: "#6b6860",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "6px 0",
-            marginBottom: expanded ? "20px" : "0",
-          }}
-        >
-          {expanded ? (
-            <ChevronUp style={{ width: "14px", height: "14px" }} />
-          ) : (
-            <ChevronDown style={{ width: "14px", height: "14px" }} />
-          )}
-          {expanded ? "Show less" : "See perspectives & sources"}
-        </button>
+        {(story.perspectives.length > 0 || story.sources.length > 0) && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "12px",
+              fontWeight: 500,
+              color: "#9e9a90",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "6px 0",
+              marginBottom: expanded ? "16px" : "0",
+            }}
+          >
+            {expanded ? (
+              <ChevronUp style={{ width: "13px", height: "13px" }} />
+            ) : (
+              <ChevronDown style={{ width: "13px", height: "13px" }} />
+            )}
+            {expanded ? "Hide sources" : "View perspectives & sources"}
+          </button>
+        )}
 
         {expanded && (
-          <div>
-            {/* Perspectives */}
+          <div
+            style={{
+              borderTop: "1px solid #f0ece4",
+              paddingTop: "16px",
+            }}
+          >
+            {/* Perspectives — compact */}
             {story.perspectives.length > 0 && (
-              <div style={{ marginBottom: "20px" }}>
+              <div style={{ marginBottom: "14px" }}>
                 <div
                   style={{
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    letterSpacing: "0.08em",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
                     textTransform: "uppercase",
                     color: "#9e9a90",
-                    marginBottom: "12px",
+                    marginBottom: "8px",
                   }}
                 >
                   Perspectives
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {story.perspectives.map((p, i) => (
                     <div
                       key={i}
                       style={{
-                        borderLeft: `3px solid ${ACCENT_COLORS[i % ACCENT_COLORS.length]}`,
-                        paddingLeft: "14px",
-                        paddingTop: "8px",
-                        paddingBottom: "8px",
-                        background: "#faf8f4",
-                        borderRadius: "0 8px 8px 0",
+                        display: "flex",
+                        alignItems: "baseline",
+                        gap: "10px",
+                        fontSize: "13px",
+                        lineHeight: 1.5,
+                        color: "#6b6860",
                       }}
                     >
-                      <div
+                      <span
                         style={{
-                          display: "flex",
+                          flexShrink: 0,
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "#1a1a18",
+                          minWidth: "80px",
+                        }}
+                      >
+                        {p.label}
+                      </span>
+                      <span style={{ flex: 1 }}>{p.description}</span>
+                      <a
+                        href={p.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          flexShrink: 0,
+                          display: "inline-flex",
                           alignItems: "center",
-                          justifyContent: "space-between",
-                          marginBottom: "6px",
+                          gap: "3px",
+                          fontSize: "11px",
+                          color: "#9e9a90",
+                          textDecoration: "none",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            color: "#1a1a18",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.06em",
-                          }}
-                        >
-                          {p.label}
-                        </span>
-                        <a
-                          href={p.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            fontSize: "12px",
-                            color: "#9e9a90",
-                            textDecoration: "none",
-                          }}
-                        >
-                          {p.sourceName}
-                          <ExternalLink style={{ width: "11px", height: "11px" }} />
-                        </a>
-                      </div>
-                      <p
-                        style={{
-                          fontSize: "14px",
-                          lineHeight: 1.65,
-                          color: "#6b6860",
-                          margin: 0,
-                        }}
-                      >
-                        {p.description}
-                      </p>
+                        {p.sourceName}
+                        <ExternalLink style={{ width: "9px", height: "9px" }} />
+                      </a>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Sources */}
-            <div>
-              <div
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "#9e9a90",
-                  marginBottom: "10px",
-                }}
-              >
-                Sources
+            {/* Sources — compact inline list */}
+            {story.sources.length > 0 && (
+              <div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: "#9e9a90",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Sources
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px" }}>
+                  {story.sources.map((s, i) => (
+                    <a
+                      key={i}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "3px",
+                        fontSize: "12px",
+                        color: "#6b6860",
+                        textDecoration: "none",
+                      }}
+                    >
+                      {s.name}
+                      <ExternalLink style={{ width: "9px", height: "9px", color: "#9e9a90" }} />
+                    </a>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {story.sources.map((s, i) => (
-                  <a
-                    key={i}
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      fontSize: "12px",
-                      fontWeight: 500,
-                      color: "#1a1a18",
-                      padding: "6px 14px",
-                      borderRadius: "100px",
-                      border: "1px solid #e8e4dc",
-                      background: "#ffffff",
-                      textDecoration: "none",
-                      transition: "border-color 0.2s ease",
-                    }}
-                  >
-                    {s.name}
-                    <ExternalLink style={{ width: "10px", height: "10px", color: "#9e9a90" }} />
-                  </a>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         )}
+
+        {/* Always-visible footer: mark as read + skip */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+            marginTop: "20px",
+            paddingTop: "14px",
+            borderTop: "1px solid #f0ece4",
+          }}
+        >
+          <button
+            onClick={() => setRead(!read)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              fontSize: "12px",
+              fontWeight: 500,
+              color: read ? "#2a9d5c" : "#9e9a90",
+              background: read ? "#e8f5ee" : "transparent",
+              border: "1px solid",
+              borderColor: read ? "#c0e8d0" : "#e8e4dc",
+              borderRadius: "100px",
+              padding: "5px 12px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <Check style={{ width: "11px", height: "11px" }} />
+            {read ? "Read" : "Mark as read"}
+          </button>
+          <button
+            onClick={() => setSkipped(true)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              fontSize: "12px",
+              fontWeight: 500,
+              color: "#9e9a90",
+              background: "transparent",
+              border: "1px solid #e8e4dc",
+              borderRadius: "100px",
+              padding: "5px 12px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <SkipForward style={{ width: "11px", height: "11px" }} />
+            Skip
+          </button>
+        </div>
       </div>
     </article>
   );

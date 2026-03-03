@@ -93,3 +93,9 @@ export const PERIOD_TIMES: Record<DigestPeriod, string> = {
   midday: "2:00 PM CT",
   evening: "8:00 PM CT",
 };
+
+export const PERIOD_SYMBOLS: Record<DigestPeriod, string> = {
+  morning: "☀",
+  midday: "◐",
+  evening: "◑",
+};
