@@ -1,17 +1,12 @@
 import { getRecentDigests } from "@/lib/storage";
 import { StoryReader } from "@/components/StoryReader";
 import { RunAggregationButton } from "@/components/RunAggregationButton";
-import { PERIOD_LABELS, PERIOD_TIMES, PERIOD_SYMBOLS } from "@/lib/types";
-import { format, parseISO } from "date-fns";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function HomePage() {
   const digests = await getRecentDigests(7);
-
-  // Find the most recent digest for the header
-  const latestDigest = digests.length > 0 ? digests[0] : null;
 
   return (
     <div>
@@ -29,11 +24,6 @@ export default async function HomePage() {
       >
         <div>
           <div style={{ display: "flex", alignItems: "baseline", gap: "10px", marginBottom: "6px" }}>
-            {latestDigest && (
-              <span style={{ fontSize: "16px", color: "#9e9a90" }}>
-                {PERIOD_SYMBOLS[latestDigest.period]}
-              </span>
-            )}
             <h1
               style={{
                 fontFamily: "Georgia, 'Times New Roman', serif",
@@ -45,23 +35,14 @@ export default async function HomePage() {
                 margin: 0,
               }}
             >
-              {latestDigest ? PERIOD_LABELS[latestDigest.period] : "Today's Digest"}
+              Your Briefings
             </h1>
           </div>
-          {latestDigest && (
-            <p style={{ fontSize: "13px", color: "#9e9a90", margin: 0, paddingLeft: "26px" }}>
-              {format(parseISO(latestDigest.date), "EEEE, MMMM d, yyyy")}
-              {" "}&middot;{" "}
-              {PERIOD_TIMES[latestDigest.period]}
-              {" "}&middot;{" "}
-              {latestDigest.stories.length} stor{latestDigest.stories.length !== 1 ? "ies" : "y"}
-            </p>
-          )}
-          {!latestDigest && (
-            <p style={{ fontSize: "13px", color: "#9e9a90", margin: 0 }}>
-              AI-aggregated news from diverse sources — factual, balanced, unbiased.
-            </p>
-          )}
+          <p style={{ fontSize: "13px", color: "#9e9a90", margin: 0 }}>
+            {digests.length > 0
+              ? `${digests.length} ${digests.length === 1 ? "briefing" : "briefings"} available`
+              : "AI-aggregated news from diverse sources \u2014 factual, balanced, unbiased."}
+          </p>
         </div>
         <RunAggregationButton />
       </div>

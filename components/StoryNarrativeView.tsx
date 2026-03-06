@@ -14,6 +14,7 @@ interface StoryNarrativeViewProps {
   digestPeriod: DigestPeriod;
   onMarkRead: () => void;
   onSkip: () => void;
+  onMarkAllRead?: () => void;
 }
 
 const ACCENT_COLORS = [
@@ -78,6 +79,7 @@ export function StoryNarrativeView({
   digestPeriod,
   onMarkRead,
   onSkip,
+  onMarkAllRead,
 }: StoryNarrativeViewProps) {
   const categoryLabel =
     ALL_CATEGORIES.find((c) => c.value === story.category)?.label ??
@@ -362,8 +364,30 @@ export function StoryNarrativeView({
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
-            Mark as Read
+            Next Story
           </button>
+          {onMarkAllRead && (
+            <button
+              onClick={onMarkAllRead}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#9e9a90",
+                background: "transparent",
+                border: "none",
+                padding: "10px 16px",
+                cursor: "pointer",
+                transition: "color 0.2s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a18")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#9e9a90")}
+            >
+              Finish Briefing
+            </button>
+          )}
         </div>
       </div>
     </div>

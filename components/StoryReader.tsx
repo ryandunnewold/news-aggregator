@@ -1,15 +1,14 @@
 "use client";
 
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { StoryNarrativeView } from "@/components/StoryNarrativeView";
+import { BriefingComplete } from "@/components/BriefingComplete";
 import { EmptyFeed } from "@/components/EmptyFeed";
 import type { AggregatedStory, DigestPeriod, NewsDigest } from "@/lib/types";
 
 const READ_KEY = "newsagg:read-stories";
 
 // ── localStorage-backed store ──────────────────────────────────────────────
-// Custom listener set ensures in-tab updates propagate to useSyncExternalStore.
-
 const storeListeners = new Set<() => void>();
 
 function subscribeReadIds(callback: () => void): () => void {
@@ -45,24 +44,25 @@ interface StoryWithId {
   digestPeriod: DigestPeriod;
 }
 
-function flattenStories(digests: NewsDigest[]): StoryWithId[] {
-  return digests.flatMap((digest) =>
-    digest.stories.map((story, i) => ({
-      id: `${digest.id}-${i}`,
-      story,
-      digestDate: digest.date,
-      digestPeriod: digest.period,
-    }))
-  );
+function storiesForDigest(digest: NewsDigest): StoryWithId[] {
+  return digest.stories.map((story, i) => ({
+    id: `${digest.id}-${i}`,
+    story,
+    digestDate: digest.date,
+    digestPeriod: digest.period,
+  }));
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 interface StoryReaderProps {
   digests: NewsDigest[];
+  onDigestChange?: (digest: NewsDigest | null) => void;
 }
 
-export function StoryReader({ digests }: StoryReaderProps) {
+export function StoryReader({ digests, onDigestChange }: StoryReaderProps) {
+  const [briefingIndex, setBriefingIndex] = useState(0);
+
   const rawReadIds = useSyncExternalStore(
     subscribeReadIds,
     getReadIdsSnapshot,
@@ -74,14 +74,41 @@ export function StoryReader({ digests }: StoryReaderProps) {
     [rawReadIds]
   );
 
-  const allStories = useMemo(() => flattenStories(digests), [digests]);
+  const currentDigest = digests[briefingIndex] ?? null;
 
-  const unreadStories = useMemo(
-    () => allStories.filter((s) => !readIds.has(s.id)),
-    [allStories, readIds]
+  const currentStories = useMemo(
+    () => (currentDigest ? storiesForDigest(currentDigest) : []),
+    [currentDigest]
   );
 
-  const currentStory = unreadStories[0] ?? null;
+  const unreadInBriefing = useMemo(
+    () => currentStories.filter((s) => !readIds.has(s.id)),
+    [currentStories, readIds]
+  );
+
+  const currentStory = unreadInBriefing[0] ?? null;
+
+  const hasNextBriefing = briefingIndex < digests.length - 1;
+
+  // Count how many remaining digests have unread stories
+  const remainingBriefings = useMemo(() => {
+    let count = 0;
+    for (let i = briefingIndex + 1; i < digests.length; i++) {
+      const stories = storiesForDigest(digests[i]);
+      if (stories.some((s) => !readIds.has(s.id))) count++;
+    }
+    return count;
+  }, [digests, briefingIndex, readIds]);
+
+  // Notify parent when digest changes
+  const navigateToBriefing = useCallback(
+    (index: number) => {
+      setBriefingIndex(index);
+      onDigestChange?.(digests[index] ?? null);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [digests, onDigestChange]
+  );
 
   const handleMarkRead = useCallback(() => {
     if (!currentStory) return;
@@ -91,39 +118,99 @@ export function StoryReader({ digests }: StoryReaderProps) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStory, readIds]);
 
-  // Skip works the same as mark-as-read: advances to the next story
   const handleSkip = useCallback(() => {
     handleMarkRead();
   }, [handleMarkRead]);
 
+  const handleMarkAllRead = useCallback(() => {
+    const next = new Set(readIds);
+    for (const s of currentStories) next.add(s.id);
+    writeReadIds(next);
+  }, [currentStories, readIds]);
+
+  const handleMarkAllReadAndDismiss = useCallback(() => {
+    // Mark all stories across all digests as read
+    const next = new Set(readIds);
+    for (const digest of digests) {
+      const stories = storiesForDigest(digest);
+      for (const s of stories) next.add(s.id);
+    }
+    writeReadIds(next);
+  }, [digests, readIds]);
+
+  const handleNextBriefing = useCallback(() => {
+    // Find the next digest with unread stories
+    for (let i = briefingIndex + 1; i < digests.length; i++) {
+      const stories = storiesForDigest(digests[i]);
+      if (stories.some((s) => !readIds.has(s.id))) {
+        navigateToBriefing(i);
+        return;
+      }
+    }
+    // If no unread briefings, just go to next
+    if (hasNextBriefing) {
+      navigateToBriefing(briefingIndex + 1);
+    }
+  }, [briefingIndex, digests, readIds, hasNextBriefing, navigateToBriefing]);
+
   const handleReset = useCallback(() => {
     writeReadIds(new Set());
-  }, []);
+    navigateToBriefing(0);
+  }, [navigateToBriefing]);
 
-  if (allStories.length === 0) {
+  const allStoriesAllDigests = useMemo(
+    () => digests.flatMap((d) => storiesForDigest(d)),
+    [digests]
+  );
+  const totalRead = useMemo(
+    () => allStoriesAllDigests.filter((s) => readIds.has(s.id)).length,
+    [allStoriesAllDigests, readIds]
+  );
+  const allRead = totalRead === allStoriesAllDigests.length && allStoriesAllDigests.length > 0;
+
+  // No digests at all
+  if (digests.length === 0) {
     return <EmptyFeed variant="no-digests" />;
   }
 
-  if (!currentStory) {
+  if (allRead) {
     return (
       <EmptyFeed
         variant="all-read"
-        totalRead={readIds.size}
+        totalRead={totalRead}
         onReset={handleReset}
       />
     );
+  }
+
+  // Current briefing complete but more briefings available
+  if (!currentStory && currentDigest) {
+    return (
+      <BriefingComplete
+        digest={currentDigest}
+        storiesRead={currentStories.length}
+        remainingBriefings={remainingBriefings}
+        onNextBriefing={remainingBriefings > 0 ? handleNextBriefing : undefined}
+        onMarkAllRead={handleMarkAllReadAndDismiss}
+      />
+    );
+  }
+
+  if (!currentStory || !currentDigest) {
+    return <EmptyFeed variant="no-digests" />;
   }
 
   return (
     <StoryNarrativeView
       key={currentStory.id}
       story={currentStory.story}
-      storyIndex={allStories.length - unreadStories.length}
-      totalStories={allStories.length}
+      storyIndex={currentStories.length - unreadInBriefing.length}
+      totalStories={currentStories.length}
       digestDate={currentStory.digestDate}
       digestPeriod={currentStory.digestPeriod}
       onMarkRead={handleMarkRead}
       onSkip={handleSkip}
+      onMarkAllRead={handleMarkAllRead}
     />
   );
 }
