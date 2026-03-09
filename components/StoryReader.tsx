@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { StoryNarrativeView } from "@/components/StoryNarrativeView";
 import { BriefingComplete } from "@/components/BriefingComplete";
 import { EmptyFeed } from "@/components/EmptyFeed";
@@ -60,8 +60,29 @@ interface StoryReaderProps {
   onDigestChange?: (digest: NewsDigest | null) => void;
 }
 
-export function StoryReader({ digests, onDigestChange }: StoryReaderProps) {
+export function StoryReader({ digests: initialDigests, onDigestChange }: StoryReaderProps) {
+  const [digests, setDigests] = useState(initialDigests);
   const [briefingIndex, setBriefingIndex] = useState(0);
+
+  // Recheck for new digests when the tab/window regains focus
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const res = await fetch("/api/news");
+        if (!res.ok) return;
+        const freshDigests: NewsDigest[] = await res.json();
+        if (freshDigests.length > 0) {
+          setDigests(freshDigests);
+        }
+      } catch {
+        // Silently ignore fetch errors (offline, etc.)
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
 
   const rawReadIds = useSyncExternalStore(
     subscribeReadIds,
