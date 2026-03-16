@@ -96,13 +96,12 @@ IMPORTANT GUIDELINES:
  * from different political/editorial angles using search terms.
  */
 export async function generateDigestIntro(
-  period: "morning" | "midday" | "evening",
+  period: "morning" | "evening",
   storyCount: number,
   categories: NewsCategory[]
 ): Promise<string> {
   const periodLabels = {
     morning: "morning",
-    midday: "midday",
     evening: "evening",
   };
 

@@ -10,7 +10,7 @@ export type NewsCategory =
   | "world"
   | "environment";
 
-export type DigestPeriod = "morning" | "midday" | "evening";
+export type DigestPeriod = "morning" | "evening";
 
 export interface NewsSource {
   name: string;
@@ -84,18 +84,15 @@ export const DEFAULT_CATEGORIES: NewsCategory[] = [
 
 export const PERIOD_LABELS: Record<DigestPeriod, string> = {
   morning: "Morning Briefing",
-  midday: "Midday Update",
   evening: "Evening Wrap-Up",
 };
 
 export const PERIOD_TIMES: Record<DigestPeriod, string> = {
   morning: "8:00 AM CT",
-  midday: "12:00 PM CT",
   evening: "4:00 PM CT",
 };
 
 export const PERIOD_SYMBOLS: Record<DigestPeriod, string> = {
   morning: "☀",
-  midday: "◐",
   evening: "◑",
 };
