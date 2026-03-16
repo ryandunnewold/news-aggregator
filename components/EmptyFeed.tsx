@@ -63,7 +63,7 @@ export function EmptyFeed({ variant = "no-digests", totalRead = 0, onReset }: Em
               marginBottom: "8px",
             }}
           >
-            {(["morning", "midday", "evening"] as const).map((period) => (
+            {(["morning", "evening"] as const).map((period) => (
               <div
                 key={period}
                 style={{
@@ -137,7 +137,7 @@ export function EmptyFeed({ variant = "no-digests", totalRead = 0, onReset }: Em
           flexWrap: "wrap",
         }}
       >
-        {(["morning", "midday", "evening"] as const).map((period) => (
+        {(["morning", "evening"] as const).map((period) => (
           <div
             key={period}
             style={{

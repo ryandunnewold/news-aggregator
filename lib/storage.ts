@@ -57,7 +57,7 @@ export async function getRecentDigests(days = 7): Promise<NewsDigest[]> {
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split("T")[0];
 
-    for (const period of ["evening", "midday", "morning"] as const) {
+    for (const period of ["evening", "morning"] as const) {
       const digest = await getDigest(dateStr, period);
       if (digest) digests.push(digest);
     }

@@ -20,7 +20,7 @@ export function NewsFeed({ digests }: NewsFeedProps) {
   const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
   const latestDate = dates[0];
 
-  const periodOrder = { evening: 0, midday: 1, morning: 2 };
+  const periodOrder = { evening: 0, morning: 1 };
   for (const date of dates) {
     byDate[date].sort(
       (a, b) => periodOrder[a.period] - periodOrder[b.period]
