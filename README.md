@@ -15,7 +15,7 @@ AI-powered news aggregator that fetches top stories three times a day, sources p
 
 - **Next.js 15** (App Router)
 - **Claude AI** (Anthropic) — story aggregation and balanced reporting
-- **NewsAPI** — headline fetching from 80,000+ news sources
+- **GNews API** — headline fetching with broad topic coverage and keyword exclusion
 - **Vercel KV** (Redis) — digest storage
 - **Vercel Cron Jobs** — scheduled digest generation
 - **Tailwind CSS v4 + shadcn/ui** — UI components
@@ -41,7 +41,7 @@ Fill in:
 | Variable | Where to get it |
 |---|---|
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
-| `NEWS_API_KEY` | [newsapi.org/register](https://newsapi.org/register) (free) |
+| `GNEWS_API_KEY` | [gnews.io](https://gnews.io/) (free, 100 req/day) |
 | `KV_REST_API_URL` | Vercel KV dashboard (see below) |
 | `KV_REST_API_TOKEN` | Vercel KV dashboard |
 | `CRON_SECRET` | Any random string |
