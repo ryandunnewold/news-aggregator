@@ -1,8 +1,8 @@
 import type { RawArticle, NewsCategory } from "./types";
 
-const GNEWS_API_BASE = "https://gnews.io/api/v4";
+const NEWS_API_BASE = "https://newsapi.org/v2";
 
-// Map our categories to GNews top-headlines topics
+// Map our categories to NewsAPI top-headlines categories
 const CATEGORY_MAP: Partial<Record<NewsCategory, string>> = {
   general: "general",
   technology: "technology",
@@ -11,111 +11,150 @@ const CATEGORY_MAP: Partial<Record<NewsCategory, string>> = {
   health: "health",
   sports: "sports",
   entertainment: "entertainment",
-  world: "world",
-  nation: "nation",
 };
 
-// Categories that need keyword-based searching via the search endpoint
+// Categories that need keyword-based searching via the everything endpoint
 const KEYWORD_MAP: Partial<Record<NewsCategory, string>> = {
   politics: "politics OR government OR congress OR senate OR election",
+  world: "international OR global OR foreign policy",
+  nation: "domestic policy OR national OR federal OR legislation",
   environment: "climate OR environment OR sustainability OR renewable energy",
 };
 
-// Exclusion terms per category to filter out unwanted topics.
-// GNews supports NOT operator in queries.
-const CATEGORY_EXCLUSIONS: Partial<Record<NewsCategory, string>> = {
-  technology:
-    'NOT "video game" NOT "video games" NOT gaming NOT PlayStation NOT Xbox NOT Nintendo NOT "game release"',
-  entertainment:
-    'NOT "video game" NOT "video games" NOT gaming NOT esports',
+// Known sources with political lean for diverse sourcing
+const DIVERSE_SOURCES_BY_CATEGORY: Record<string, string[]> = {
+  politics: [
+    "the-wall-street-journal",
+    "the-washington-post",
+    "fox-news",
+    "msnbc",
+    "abc-news",
+    "cbs-news",
+    "nbc-news",
+    "reuters",
+    "associated-press",
+    "the-hill",
+    "politico",
+    "axios",
+  ],
+  general: [
+    "reuters",
+    "associated-press",
+    "bbc-news",
+    "the-guardian",
+    "the-new-york-times",
+    "fox-news",
+    "cnn",
+    "bloomberg",
+    "the-atlantic",
+    "axios",
+  ],
+  technology: [
+    "techcrunch",
+    "wired",
+    "the-verge",
+    "ars-technica",
+    "hacker-news",
+    "engadget",
+    "recode",
+  ],
+  business: [
+    "bloomberg",
+    "the-wall-street-journal",
+    "financial-times",
+    "the-economist",
+    "business-insider",
+    "fortune",
+    "cnbc",
+  ],
+  world: [
+    "reuters",
+    "associated-press",
+    "bbc-news",
+    "al-jazeera-english",
+    "the-guardian",
+    "the-new-york-times",
+  ],
+  nation: [
+    "reuters",
+    "associated-press",
+    "the-washington-post",
+    "the-new-york-times",
+    "politico",
+    "the-hill",
+    "axios",
+  ],
+  environment: [
+    "reuters",
+    "associated-press",
+    "bbc-news",
+    "the-guardian",
+    "the-new-york-times",
+    "national-geographic",
+  ],
+  default: ["reuters", "associated-press", "bbc-news", "cnn", "fox-news"],
 };
 
-interface GNewsArticle {
-  title: string;
-  description: string | null;
-  content: string | null;
-  url: string;
-  image: string | null;
-  publishedAt: string;
-  source: {
-    id: string | null;
-    name: string;
-    url: string;
-  };
+// Exclusion patterns per category — articles matching these are filtered out after fetch
+const CATEGORY_EXCLUSION_PATTERNS: Partial<Record<NewsCategory, RegExp>> = {
+  technology:
+    /\b(video\s*game|video\s*games|gaming|playstation|xbox|nintendo|game\s*release|esports|e-sports|twitch|steam\s*sale)\b/i,
+  entertainment:
+    /\b(video\s*game|video\s*games|gaming|esports|e-sports|twitch)\b/i,
+};
+
+function getSources(category: NewsCategory): string {
+  const sources =
+    DIVERSE_SOURCES_BY_CATEGORY[category] ||
+    DIVERSE_SOURCES_BY_CATEGORY.default;
+  return sources.slice(0, 20).join(",");
 }
 
-function toRawArticle(article: GNewsArticle): RawArticle {
-  return {
-    title: article.title,
-    description: article.description,
-    content: article.content,
-    url: article.url,
-    urlToImage: article.image,
-    publishedAt: article.publishedAt,
-    source: {
-      id: article.source.id,
-      name: article.source.name,
-    },
-  };
+function filterExcludedArticles(
+  articles: RawArticle[],
+  category: NewsCategory
+): RawArticle[] {
+  const pattern = CATEGORY_EXCLUSION_PATTERNS[category];
+  if (!pattern) return articles;
+
+  return articles.filter((article) => {
+    const text = `${article.title || ""} ${article.description || ""}`;
+    return !pattern.test(text);
+  });
 }
 
 async function fetchTopHeadlines(
   category: NewsCategory,
   pageSize = 10
 ): Promise<RawArticle[]> {
-  const apiKey = process.env.GNEWS_API_KEY;
-  if (!apiKey) throw new Error("GNEWS_API_KEY is not set");
+  const apiKey = process.env.NEWS_API_KEY;
+  if (!apiKey) throw new Error("NEWS_API_KEY is not set");
 
-  const gnewsTopic = CATEGORY_MAP[category];
+  const newsApiCategory = CATEGORY_MAP[category];
   const keyword = KEYWORD_MAP[category];
-  const exclusions = CATEGORY_EXCLUSIONS[category] || "";
 
   let url: string;
 
-  if (gnewsTopic) {
-    // Use top-headlines endpoint for supported categories
-    const params = new URLSearchParams({
-      category: gnewsTopic,
-      lang: "en",
-      country: "us",
-      max: String(pageSize),
-      apikey: apiKey,
-    });
-    // Add exclusion query if this category has one
-    if (exclusions) {
-      params.set("q", exclusions);
-    }
-    url = `${GNEWS_API_BASE}/top-headlines?${params.toString()}`;
+  if (newsApiCategory) {
+    // Use category endpoint for supported categories
+    url = `${NEWS_API_BASE}/top-headlines?category=${newsApiCategory}&language=en&pageSize=${pageSize}&apiKey=${apiKey}`;
   } else if (keyword) {
-    // Use search endpoint with keyword search for categories not in GNews topics
-    const fullQuery = exclusions ? `${keyword} ${exclusions}` : keyword;
-    const params = new URLSearchParams({
-      q: fullQuery,
-      lang: "en",
-      country: "us",
-      max: String(pageSize),
-      sortby: "publishedAt",
-      apikey: apiKey,
-    });
-    url = `${GNEWS_API_BASE}/search?${params.toString()}`;
+    // Use everything endpoint with keyword search + diverse sources
+    const sources = getSources(category);
+    url = `${NEWS_API_BASE}/everything?q=${encodeURIComponent(keyword)}&language=en&sortBy=publishedAt&pageSize=${pageSize}&sources=${sources}&apiKey=${apiKey}`;
   } else {
-    const params = new URLSearchParams({
-      lang: "en",
-      country: "us",
-      max: String(pageSize),
-      apikey: apiKey,
-    });
-    url = `${GNEWS_API_BASE}/top-headlines?${params.toString()}`;
+    url = `${NEWS_API_BASE}/top-headlines?language=en&pageSize=${pageSize}&apiKey=${apiKey}`;
   }
 
   const res = await fetch(url, { next: { revalidate: 0 } });
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`GNews API error ${res.status}: ${err}`);
+    throw new Error(`NewsAPI error ${res.status}: ${err}`);
   }
 
   const data = await res.json();
-  return ((data.articles as GNewsArticle[]) || []).map(toRawArticle);
+  const articles = (data.articles as RawArticle[]) || [];
+  return filterExcludedArticles(articles, category);
 }
 
 async function fetchDiverseArticles(
@@ -123,31 +162,18 @@ async function fetchDiverseArticles(
   topicKeyword: string,
   pageSize = 8
 ): Promise<RawArticle[]> {
-  const apiKey = process.env.GNEWS_API_KEY;
+  const apiKey = process.env.NEWS_API_KEY;
   if (!apiKey) return [];
 
-  const exclusions = CATEGORY_EXCLUSIONS[category] || "";
-  const fullQuery = exclusions
-    ? `${topicKeyword} ${exclusions}`
-    : topicKeyword;
-
-  const params = new URLSearchParams({
-    q: fullQuery,
-    lang: "en",
-    country: "us",
-    max: String(pageSize),
-    sortby: "publishedAt",
-    apikey: apiKey,
-  });
+  const sources = getSources(category);
+  const url = `${NEWS_API_BASE}/everything?q=${encodeURIComponent(topicKeyword)}&language=en&sortBy=publishedAt&pageSize=${pageSize}&sources=${sources}&apiKey=${apiKey}`;
 
   try {
-    const res = await fetch(
-      `${GNEWS_API_BASE}/search?${params.toString()}`,
-      { next: { revalidate: 0 } }
-    );
+    const res = await fetch(url, { next: { revalidate: 0 } });
     if (!res.ok) return [];
     const data = await res.json();
-    return ((data.articles as GNewsArticle[]) || []).map(toRawArticle);
+    const articles = (data.articles as RawArticle[]) || [];
+    return filterExcludedArticles(articles, category);
   } catch {
     return [];
   }
