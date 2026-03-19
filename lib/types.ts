@@ -8,6 +8,7 @@ export type NewsCategory =
   | "sports"
   | "entertainment"
   | "world"
+  | "nation"
   | "environment";
 
 export type DigestPeriod = "morning" | "evening";
@@ -72,6 +73,7 @@ export const ALL_CATEGORIES: { value: NewsCategory; label: string }[] = [
   { value: "sports", label: "Sports" },
   { value: "entertainment", label: "Entertainment" },
   { value: "world", label: "World" },
+  { value: "nation", label: "Nation" },
   { value: "environment", label: "Environment" },
 ];
 
