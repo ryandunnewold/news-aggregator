@@ -22,8 +22,55 @@ const ACCENT_COLORS = [
   "#4a7c59", // forest
 ];
 
+function ExpandableCardSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div style={{ marginBottom: "8px" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          width: "100%",
+          background: open ? "#faf8f4" : "#ffffff",
+          border: "1px solid #e8e4dc",
+          borderRadius: open ? "8px 8px 0 0" : "8px",
+          padding: "10px 14px",
+          cursor: "pointer",
+          transition: "all 0.2s ease",
+          fontSize: "12px",
+          fontWeight: 600,
+          color: "#1a1a18",
+          letterSpacing: "0.02em",
+        }}
+      >
+        {open ? (
+          <ChevronUp style={{ width: "13px", height: "13px", color: "#6b6860" }} />
+        ) : (
+          <ChevronDown style={{ width: "13px", height: "13px", color: "#6b6860" }} />
+        )}
+        {title}
+      </button>
+      {open && (
+        <div
+          style={{
+            border: "1px solid #e8e4dc",
+            borderTop: "none",
+            borderRadius: "0 0 8px 8px",
+            padding: "8px 14px 14px",
+            background: "#ffffff",
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function StoryCard({ story, index }: StoryCardProps) {
-  const [expanded, setExpanded] = useState(false);
   const [read, setRead] = useState(false);
   const [skipped, setSkipped] = useState(false);
 
@@ -147,42 +194,24 @@ export function StoryCard({ story, index }: StoryCardProps) {
           {story.headline}
         </h2>
 
-        {/* Two-column layout: summary + key facts */}
-        <div
+        {/* Summary */}
+        <p
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "24px",
+            fontSize: "15px",
+            lineHeight: 1.7,
+            color: "#6b6860",
+            margin: 0,
             marginBottom: "16px",
           }}
-          className="story-body-grid"
         >
-          {/* Summary */}
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: "#6b6860",
-              margin: 0,
-            }}
-          >
-            {story.summary}
-          </p>
+          {story.summary}
+        </p>
 
-          {/* Key Facts */}
-          <div>
-            <div
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#9e9a90",
-                marginBottom: "8px",
-              }}
-            >
-              Key Facts
-            </div>
+        {/* Expandable Key Facts */}
+        {story.keyFacts.length > 0 && (
+          <ExpandableCardSection
+            title={`${story.keyFacts.length} Key Fact${story.keyFacts.length !== 1 ? "s" : ""}`}
+          >
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {story.keyFacts.map((fact, i) => (
                 <li
@@ -220,58 +249,17 @@ export function StoryCard({ story, index }: StoryCardProps) {
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
-
-        {/* Expand / collapse button */}
-        {(story.perspectives.length > 0 || story.sources.length > 0) && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "#9e9a90",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "6px 0",
-              marginBottom: expanded ? "16px" : "0",
-            }}
-          >
-            {expanded ? (
-              <ChevronUp style={{ width: "13px", height: "13px" }} />
-            ) : (
-              <ChevronDown style={{ width: "13px", height: "13px" }} />
-            )}
-            {expanded ? "Hide sources" : "View perspectives & sources"}
-          </button>
+          </ExpandableCardSection>
         )}
 
-        {expanded && (
-          <div
-            style={{
-              borderTop: "1px solid #f0ece4",
-              paddingTop: "16px",
-            }}
+        {/* Expandable Perspectives & Sources */}
+        {(story.perspectives.length > 0 || story.sources.length > 0) && (
+          <ExpandableCardSection
+            title={`${story.perspectives.length} Perspective${story.perspectives.length !== 1 ? "s" : ""} & Sources`}
           >
-            {/* Perspectives — compact */}
+            {/* Perspectives */}
             {story.perspectives.length > 0 && (
-              <div style={{ marginBottom: "14px" }}>
-                <div
-                  style={{
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    color: "#9e9a90",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Perspectives
-                </div>
+              <div style={{ marginBottom: story.sources.length > 0 ? "14px" : "0" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {story.perspectives.map((p, i) => (
                     <div
@@ -321,9 +309,14 @@ export function StoryCard({ story, index }: StoryCardProps) {
               </div>
             )}
 
-            {/* Sources — compact inline list */}
+            {/* Sources */}
             {story.sources.length > 0 && (
-              <div>
+              <div
+                style={{
+                  paddingTop: story.perspectives.length > 0 ? "10px" : "0",
+                  borderTop: story.perspectives.length > 0 ? "1px solid #f0ece4" : "none",
+                }}
+              >
                 <div
                   style={{
                     fontSize: "10px",
@@ -359,7 +352,7 @@ export function StoryCard({ story, index }: StoryCardProps) {
                 </div>
               </div>
             )}
-          </div>
+          </ExpandableCardSection>
         )}
 
         {/* Always-visible footer: mark as read + skip */}

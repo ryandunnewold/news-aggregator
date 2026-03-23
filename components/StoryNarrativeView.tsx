@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import type { AggregatedStory, DigestPeriod } from "@/lib/types";
 import { ALL_CATEGORIES, PERIOD_LABELS, PERIOD_SYMBOLS } from "@/lib/types";
 import { format, parseISO } from "date-fns";
@@ -16,17 +16,6 @@ interface StoryNarrativeViewProps {
   onSkip: () => void;
   onMarkAllRead?: () => void;
 }
-
-const ACCENT_COLORS = [
-  "#e66a1e",
-  "#2a6496",
-  "#2a9d5c",
-  "#c8a930",
-  "#1a2b5c",
-  "#b01c2e",
-  "#7b5ea7",
-  "#4a7c59",
-];
 
 function useReveal(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
@@ -84,9 +73,6 @@ export function StoryNarrativeView({
   const categoryLabel =
     ALL_CATEGORIES.find((c) => c.value === story.category)?.label ??
     story.category;
-
-  const accentForPerspective = (i: number) =>
-    ACCENT_COLORS[i % ACCENT_COLORS.length];
 
   const formattedDate = format(parseISO(digestDate), "MMMM d, yyyy");
 
@@ -222,28 +208,14 @@ export function StoryNarrativeView({
           </p>
         </Reveal>
 
-        {/* Key facts inline after summary */}
+        {/* Expandable Key Facts */}
         {story.keyFacts.length > 0 && (
           <Reveal delay={320}>
-            <div
-              style={{
-                maxWidth: "560px",
-                marginTop: "32px",
-                textAlign: "left",
-              }}
+            <ExpandableSection
+              title={`${story.keyFacts.length} Key Fact${story.keyFacts.length !== 1 ? "s" : ""}`}
+              defaultOpen={false}
+              style={{ maxWidth: "560px", marginTop: "32px", textAlign: "left" }}
             >
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "#9e9a90",
-                  marginBottom: "12px",
-                }}
-              >
-                Key Facts
-              </div>
               {story.keyFacts.map((fact, i) => (
                 <div
                   key={i}
@@ -277,21 +249,92 @@ export function StoryNarrativeView({
                   </span>
                 </div>
               ))}
-            </div>
+            </ExpandableSection>
+          </Reveal>
+        )}
+
+        {/* Expandable Perspectives */}
+        {story.perspectives.length > 0 && (
+          <Reveal delay={400}>
+            <ExpandableSection
+              title={`${story.perspectives.length} Perspective${story.perspectives.length !== 1 ? "s" : ""}`}
+              defaultOpen={false}
+              style={{ maxWidth: "560px", marginTop: "16px", textAlign: "left" }}
+            >
+              {story.perspectives.map((perspective, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: "12px 0",
+                    borderBottom: i < story.perspectives.length - 1 ? "1px solid #f0ece4" : "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#1a1a18",
+                      }}
+                    >
+                      {perspective.sourceName}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        padding: "2px 8px",
+                        borderRadius: "100px",
+                        border: "1px solid #e8e4dc",
+                        color: "#6b6860",
+                        background: "#ffffff",
+                      }}
+                    >
+                      {perspective.label}
+                    </span>
+                    <a
+                      href={perspective.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "3px",
+                        fontSize: "11px",
+                        color: "#9e9a90",
+                        textDecoration: "none",
+                        marginLeft: "auto",
+                      }}
+                    >
+                      Source
+                      <ExternalLink style={{ width: "10px", height: "10px" }} />
+                    </a>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: "14px",
+                      lineHeight: 1.6,
+                      color: "#6b6860",
+                      margin: 0,
+                    }}
+                  >
+                    {perspective.description}
+                  </p>
+                </div>
+              ))}
+            </ExpandableSection>
           </Reveal>
         )}
       </section>
-
-      {/* ── Perspectives ── */}
-      {story.perspectives.map((perspective, i) => (
-        <PerspectiveSection
-          key={i}
-          perspective={perspective}
-          accent={accentForPerspective(i)}
-          fromRight={i % 2 !== 0}
-        />
-      ))}
-      {/* Sources section removed -- source links are now inline in each perspective */}
 
       {/* ── Sticky footer ── */}
       <div
@@ -394,130 +437,57 @@ export function StoryNarrativeView({
   );
 }
 
-interface PerspectiveSectionProps {
-  perspective: AggregatedStory["perspectives"][number];
-  accent: string;
-  fromRight: boolean;
+interface ExpandableSectionProps {
+  title: string;
+  defaultOpen: boolean;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
-function PerspectiveSection({ perspective, accent, fromRight }: PerspectiveSectionProps) {
-  const { ref, visible } = useReveal(0.1);
-  const [expanded, setExpanded] = useState(false);
-
-  // Truncate description to ~120 chars for collapsed view
-  const isLong = perspective.description.length > 120;
-  const truncated = isLong
-    ? perspective.description.slice(0, 120).replace(/\s+\S*$/, "") + "..."
-    : perspective.description;
+function ExpandableSection({ title, defaultOpen, children, style }: ExpandableSectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section
-      ref={ref}
-      style={{
-        padding: "40px 0",
-        position: "relative",
-        opacity: visible ? 1 : 0,
-        transform: visible
-          ? "translateX(0)"
-          : fromRight
-          ? "translateX(30px)"
-          : "translateX(-30px)",
-        transition: "opacity 0.7s ease, transform 0.7s ease",
-        borderTop: `2px solid ${accent}`,
-      }}
-    >
-      <div
+    <div style={style}>
+      <button
+        onClick={() => setOpen(!open)}
         style={{
-          maxWidth: "640px",
-          margin: "0 auto",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          width: "100%",
+          background: open ? "#faf8f4" : "#ffffff",
+          border: "1px solid #e8e4dc",
+          borderRadius: open ? "10px 10px 0 0" : "10px",
+          padding: "12px 16px",
+          cursor: "pointer",
+          transition: "all 0.2s ease",
+          fontSize: "13px",
+          fontWeight: 600,
+          color: "#1a1a18",
+          letterSpacing: "0.02em",
         }}
       >
-        {/* Compact source header: name + label inline */}
+        {open ? (
+          <ChevronUp style={{ width: "14px", height: "14px", color: "#6b6860" }} />
+        ) : (
+          <ChevronDown style={{ width: "14px", height: "14px", color: "#6b6860" }} />
+        )}
+        {title}
+      </button>
+      {open && (
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "10px",
-            marginBottom: "16px",
+            border: "1px solid #e8e4dc",
+            borderTop: "none",
+            borderRadius: "0 0 10px 10px",
+            padding: "8px 16px 16px",
+            background: "#ffffff",
           }}
         >
-          <h2
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: "18px",
-              fontWeight: 400,
-              color: "#1a1a18",
-              margin: 0,
-            }}
-          >
-            {perspective.sourceName}
-          </h2>
-          <span
-            style={{
-              fontSize: "10px",
-              fontWeight: 600,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              padding: "3px 10px",
-              borderRadius: "100px",
-              border: "1px solid #e8e4dc",
-              color: "#6b6860",
-              background: "#ffffff",
-            }}
-          >
-            {perspective.label}
-          </span>
-          <a
-            href={perspective.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "#9e9a90",
-              textDecoration: "none",
-              marginLeft: "auto",
-              transition: "color 0.2s ease",
-            }}
-          >
-            Source
-            <ExternalLink style={{ width: "11px", height: "11px" }} />
-          </a>
+          {children}
         </div>
-
-        {/* Truncated/expandable description */}
-        <p
-          style={{
-            fontSize: "15px",
-            lineHeight: 1.7,
-            color: "#6b6860",
-            margin: 0,
-          }}
-        >
-          {expanded || !isLong ? perspective.description : truncated}
-          {isLong && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#2a6496",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: "pointer",
-                padding: "0 0 0 6px",
-                textDecoration: "none",
-              }}
-            >
-              {expanded ? "Show less" : "Read more"}
-            </button>
-          )}
-        </p>
-      </div>
-    </section>
+      )}
+    </div>
   );
 }
