@@ -15,7 +15,7 @@ export async function aggregateNewsStories(
 ): Promise<AggregatedStory[]> {
   if (articles.length === 0) return [];
 
-  // Format articles for the prompt
+  // Format articles for the prompt, including content when available
   const articlesText = articles
     .slice(0, 30) // Cap to avoid token limits
     .map(
@@ -24,12 +24,13 @@ export async function aggregateNewsStories(
 URL: ${a.url}
 TITLE: ${a.title}
 DESCRIPTION: ${a.description ?? "N/A"}
+CONTENT: ${a.content ?? "N/A"}
 PUBLISHED: ${a.publishedAt}
 ---`
     )
     .join("\n");
 
-  const prompt = `You are a neutral, factual news aggregator. Your job is to analyze news articles from diverse sources and create balanced, unbiased summaries.
+  const prompt = `You are a neutral, factual news aggregator. Your job is to analyze news articles from diverse sources and create detailed, balanced summaries that give the reader all the substantive information so they don't need to click through to the original articles.
 
 Below are news articles from various sources about ${category} topics. These sources represent different political and editorial perspectives.
 
@@ -38,17 +39,17 @@ ${articlesText}
 
 Your task:
 1. Identify the 3-5 most significant, distinct news stories from these articles
-2. For each story, create a balanced, factual aggregated report
+2. For each story, create a detailed, factual aggregated report
 
 Return a JSON array of story objects. Each story must follow this exact schema:
 {
   "headline": "Neutral, factual headline (no editorial slant)",
-  "summary": "2-3 sentence factual summary covering the core facts without editorializing",
-  "keyFacts": ["Fact 1", "Fact 2", "Fact 3", "Fact 4"],
+  "summary": "A detailed 4-6 sentence summary that covers ALL the substantive details: who, what, when, where, why, and how. Include specific names, numbers, amounts, dates, rankings, lists, and outcomes mentioned in the articles. The reader should get the full picture without needing to read the original articles.",
+  "keyFacts": ["Detailed fact 1", "Detailed fact 2", "Detailed fact 3", "...up to 8 facts"],
   "perspectives": [
     {
       "label": "Label for this perspective (e.g., 'Conservative view', 'Progressive view', 'Industry perspective', 'Expert opinion')",
-      "description": "1-2 sentences describing this angle/perspective on the story",
+      "description": "2-3 sentences describing this angle/perspective on the story with specific details",
       "sourceUrl": "URL from the article that best represents this perspective",
       "sourceName": "Name of the source"
     }
@@ -61,9 +62,12 @@ Return a JSON array of story objects. Each story must follow this exact schema:
 }
 
 IMPORTANT GUIDELINES:
+- Be COMPREHENSIVE. The reader should not need to click through to the original articles. Extract every substantive detail: specific names, numbers, dollar amounts, percentages, dates, rankings, lists, quotes, and outcomes.
+- If an article mentions a list (e.g., "5 things", "top 10", "key players"), include ALL items from that list in the summary or key facts.
+- If an article mentions specific people, companies, amounts, or statistics, include them by name/number.
 - Be strictly factual. No opinion, no editorializing, no loaded language.
 - Include at least 2-3 different perspectives per major story when multiple sources cover it.
-- Key facts should be specific, verifiable claims (numbers, dates, names, events).
+- Key facts should be specific and detailed — not vague summaries. Include exact figures, full names, specific dates, and concrete outcomes.
 - If a story only has one source, note that in perspectives.
 - Perspectives should represent genuinely different viewpoints, not just different wordings of the same position.
 - Do not fabricate information. Only use what's in the provided articles.
@@ -71,7 +75,7 @@ IMPORTANT GUIDELINES:
 
   const message = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 4096,
+    max_tokens: 8192,
     messages: [{ role: "user", content: prompt }],
   });
 
