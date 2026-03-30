@@ -3,8 +3,7 @@
  * Uses Vercel KV in production, falls back to in-memory for development.
  */
 
-import type { NewsDigest, UserSettings } from "./types";
-import { DEFAULT_CATEGORIES } from "./types";
+import type { NewsDigest, StoryFeedback } from "./types";
 
 // In-memory fallback for development
 const memStore: Record<string, string> = {};
@@ -71,14 +70,26 @@ export async function getLatestDigest(): Promise<NewsDigest | null> {
   return digests[0] ?? null;
 }
 
-// User settings (global for now, could be per-user with auth)
-const SETTINGS_KEY = "settings:global";
+// --- Story feedback ---
 
-export async function getSettings(): Promise<UserSettings> {
-  const stored = await kvGet<UserSettings>(SETTINGS_KEY);
-  return stored ?? { categories: DEFAULT_CATEGORIES };
+const FEEDBACK_KEY = "feedback:dismissed";
+// Feedback TTL: 90 days (so Claude remembers preferences for a while)
+const FEEDBACK_TTL = 60 * 60 * 24 * 90;
+
+export async function saveFeedback(feedback: StoryFeedback): Promise<void> {
+  const existing = await getRecentFeedback(90);
+  existing.push(feedback);
+  // Keep only last 100 entries
+  const trimmed = existing.slice(-100);
+  await kvSet(FEEDBACK_KEY, trimmed, FEEDBACK_TTL);
 }
 
-export async function saveSettings(settings: UserSettings): Promise<void> {
-  await kvSet(SETTINGS_KEY, settings);
+export async function getRecentFeedback(days = 30): Promise<StoryFeedback[]> {
+  const all = await kvGet<StoryFeedback[]>(FEEDBACK_KEY);
+  if (!all) return [];
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+
+  return all.filter((f) => new Date(f.dismissedAt) >= cutoff);
 }

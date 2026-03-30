@@ -4,7 +4,6 @@
  */
 import { NextResponse } from "next/server";
 import { generateDigest } from "@/lib/digest";
-import { getSettings } from "@/lib/storage";
 import type { DigestPeriod } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -19,9 +18,8 @@ export async function POST(request: Request) {
 
   const period = (body.period as DigestPeriod) || "morning";
   const force = body.force === true;
-  const settings = await getSettings();
 
-  const digest = await generateDigest(settings.categories, period, force);
+  const digest = await generateDigest(period, force);
 
   return NextResponse.json({
     success: true,

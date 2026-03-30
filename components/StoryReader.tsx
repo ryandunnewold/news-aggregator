@@ -40,6 +40,7 @@ function writeReadIds(ids: Set<string>): void {
 interface StoryWithId {
   id: string;
   story: AggregatedStory;
+  digestId: string;
   digestDate: string;
   digestPeriod: DigestPeriod;
 }
@@ -48,6 +49,7 @@ function storiesForDigest(digest: NewsDigest): StoryWithId[] {
   return digest.stories.map((story, i) => ({
     id: `${digest.id}-${i}`,
     story,
+    digestId: digest.id,
     digestDate: digest.date,
     digestPeriod: digest.period,
   }));
@@ -143,6 +145,25 @@ export function StoryReader({ digests: initialDigests, onDigestChange }: StoryRe
     handleMarkRead();
   }, [handleMarkRead]);
 
+  const handleNotInteresting = useCallback(async () => {
+    if (!currentStory) return;
+    // Send feedback to the server
+    try {
+      await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          headline: currentStory.story.headline,
+          digestId: currentStory.digestId,
+        }),
+      });
+    } catch {
+      // Best effort — don't block the UI
+    }
+    // Also mark as read so we advance
+    handleMarkRead();
+  }, [currentStory, handleMarkRead]);
+
   const handleMarkAllRead = useCallback(() => {
     const next = new Set(readIds);
     for (const s of currentStories) next.add(s.id);
@@ -231,6 +252,7 @@ export function StoryReader({ digests: initialDigests, onDigestChange }: StoryRe
       digestPeriod={currentStory.digestPeriod}
       onMarkRead={handleMarkRead}
       onSkip={handleSkip}
+      onNotInteresting={handleNotInteresting}
       onMarkAllRead={handleMarkAllRead}
     />
   );

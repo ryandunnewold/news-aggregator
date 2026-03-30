@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { ExternalLink, ChevronDown, ChevronUp, ThumbsDown } from "lucide-react";
 import type { AggregatedStory, DigestPeriod } from "@/lib/types";
-import { ALL_CATEGORIES, PERIOD_LABELS, PERIOD_SYMBOLS } from "@/lib/types";
+import { PERIOD_LABELS, PERIOD_SYMBOLS } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 
 interface StoryNarrativeViewProps {
@@ -14,6 +14,7 @@ interface StoryNarrativeViewProps {
   digestPeriod: DigestPeriod;
   onMarkRead: () => void;
   onSkip: () => void;
+  onNotInteresting: () => void;
   onMarkAllRead?: () => void;
 }
 
@@ -68,12 +69,9 @@ export function StoryNarrativeView({
   digestPeriod,
   onMarkRead,
   onSkip,
+  onNotInteresting,
   onMarkAllRead,
 }: StoryNarrativeViewProps) {
-  const categoryLabel =
-    ALL_CATEGORIES.find((c) => c.value === story.category)?.label ??
-    story.category;
-
   const formattedDate = format(parseISO(digestDate), "MMMM d, yyyy");
 
   return (
@@ -134,21 +132,6 @@ export function StoryNarrativeView({
           padding: "48px 0 56px",
         }}
       >
-        <Reveal delay={0}>
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "#9e9a90",
-              marginBottom: "20px",
-            }}
-          >
-            {categoryLabel}
-          </div>
-        </Reveal>
-
         <Reveal delay={80}>
           <h1
             style={{
@@ -361,6 +344,35 @@ export function StoryNarrativeView({
             gap: "12px",
           }}
         >
+          <button
+            onClick={onNotInteresting}
+            title="Not interesting — future digests will avoid similar topics"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#9e9a90",
+              background: "transparent",
+              border: "1px solid #e8e4dc",
+              borderRadius: "100px",
+              padding: "10px 16px",
+              cursor: "pointer",
+              transition: "border-color 0.2s ease, color 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#c8453a";
+              e.currentTarget.style.color = "#c8453a";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "#e8e4dc";
+              e.currentTarget.style.color = "#9e9a90";
+            }}
+          >
+            <ThumbsDown style={{ width: "13px", height: "13px" }} />
+            Not interesting
+          </button>
           <button
             onClick={onSkip}
             style={{

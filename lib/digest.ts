@@ -1,12 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
-import type { NewsDigest, NewsCategory, DigestPeriod } from "./types";
-import { searchNewsForCategory } from "./news";
+import type { NewsDigest, DigestPeriod } from "./types";
+import { searchTopStories } from "./news";
 import { aggregateNewsStories } from "./claude";
 import { saveDigest, getDigest } from "./storage";
 import { getTodayInUserTZ } from "./timezone";
 
 export async function generateDigest(
-  categories: NewsCategory[],
   period: DigestPeriod,
   force = false
 ): Promise<NewsDigest> {
@@ -18,33 +17,18 @@ export async function generateDigest(
     if (existing) return existing;
   }
 
-  // Use AI web search to discover stories for each category
-  const allArticles = await Promise.all(
-    categories.map((cat) => searchNewsForCategory(cat, 3).catch(() => []))
-  );
+  // Use AI web search to discover top 10 stories across all topics
+  const rawArticles = await searchTopStories();
 
-  // Aggregate stories per category using AI
-  const storiesPerCategory = await Promise.all(
-    categories.map(async (cat, i) => {
-      const catArticles = allArticles[i] ?? [];
-      if (catArticles.length === 0) return [];
-      return aggregateNewsStories(catArticles, cat);
-    })
-  );
-
-  // Take 1 story per category, up to 10 total
-  const topStories = storiesPerCategory
-    .map((stories) => stories[0])
-    .filter(Boolean)
-    .slice(0, 10);
+  // Aggregate into 10 distinct stories
+  const stories = await aggregateNewsStories(rawArticles);
 
   const digest: NewsDigest = {
     id: uuidv4(),
     date: today,
     period,
     generatedAt: new Date().toISOString(),
-    categories,
-    stories: topStories,
+    stories: stories.slice(0, 10),
   };
 
   await saveDigest(digest);

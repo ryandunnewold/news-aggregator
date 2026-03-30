@@ -1,16 +1,3 @@
-export type NewsCategory =
-  | "general"
-  | "technology"
-  | "business"
-  | "politics"
-  | "science"
-  | "health"
-  | "sports"
-  | "entertainment"
-  | "world"
-  | "nation"
-  | "environment";
-
 export type DigestPeriod = "morning" | "evening";
 
 export interface NewsSource {
@@ -46,7 +33,6 @@ export interface AggregatedStory {
     name: string;
     url: string;
   }[];
-  category: NewsCategory;
   imageUrl?: string;
 }
 
@@ -55,34 +41,14 @@ export interface NewsDigest {
   date: string; // YYYY-MM-DD
   period: DigestPeriod;
   generatedAt: string; // ISO timestamp
-  categories: NewsCategory[];
   stories: AggregatedStory[];
 }
 
-export interface UserSettings {
-  categories: NewsCategory[];
+export interface StoryFeedback {
+  headline: string;
+  dismissedAt: string; // ISO timestamp
+  digestId: string;
 }
-
-export const ALL_CATEGORIES: { value: NewsCategory; label: string }[] = [
-  { value: "general", label: "General" },
-  { value: "technology", label: "Technology" },
-  { value: "business", label: "Business" },
-  { value: "politics", label: "Politics" },
-  { value: "science", label: "Science" },
-  { value: "health", label: "Health" },
-  { value: "sports", label: "Sports" },
-  { value: "entertainment", label: "Entertainment" },
-  { value: "world", label: "World" },
-  { value: "nation", label: "Nation" },
-  { value: "environment", label: "Environment" },
-];
-
-export const DEFAULT_CATEGORIES: NewsCategory[] = [
-  "general",
-  "technology",
-  "politics",
-  "world",
-];
 
 export const PERIOD_LABELS: Record<DigestPeriod, string> = {
   morning: "Morning Briefing",
@@ -95,6 +61,6 @@ export const PERIOD_TIMES: Record<DigestPeriod, string> = {
 };
 
 export const PERIOD_SYMBOLS: Record<DigestPeriod, string> = {
-  morning: "☀",
-  evening: "◑",
+  morning: "\u2600",
+  evening: "\u25D1",
 };
