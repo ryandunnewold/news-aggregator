@@ -15,9 +15,12 @@ export async function generateDigest(
   // Check if digest already exists for this period
   if (!force) {
     const existing = await getDigest(today, period);
-    if (existing) {
+    if (existing && existing.stories.length > 0) {
       console.log(`[digest] Found existing ${period} digest for ${today}, returning cached`);
       return existing;
+    }
+    if (existing) {
+      console.log(`[digest] Found existing ${period} digest for ${today} but it has 0 stories — regenerating`);
     }
   }
 
