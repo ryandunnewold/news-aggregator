@@ -19,12 +19,23 @@ export async function POST(request: Request) {
   const period = (body.period as DigestPeriod) || "morning";
   const force = body.force === true;
 
-  const digest = await generateDigest(period, force);
+  try {
+    const digest = await generateDigest(period, force);
 
-  return NextResponse.json({
-    success: true,
-    digestId: digest.id,
-    period: digest.period,
-    storiesGenerated: digest.stories.length,
-  });
+    return NextResponse.json({
+      success: true,
+      digestId: digest.id,
+      period: digest.period,
+      storiesGenerated: digest.stories.length,
+    });
+  } catch (error) {
+    console.error("[digest] Failed to generate digest:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
 }

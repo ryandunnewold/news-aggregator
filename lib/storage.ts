@@ -4,6 +4,7 @@
  */
 
 import type { NewsDigest, StoryFeedback } from "./types";
+import { getDateInUserTZ } from "./timezone";
 
 // In-memory fallback for development
 const memStore: Record<string, string> = {};
@@ -54,7 +55,7 @@ export async function getRecentDigests(days = 7): Promise<NewsDigest[]> {
   for (let i = 0; i < days; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = getDateInUserTZ(date);
 
     for (const period of ["evening", "morning"] as const) {
       const digest = await getDigest(dateStr, period);
