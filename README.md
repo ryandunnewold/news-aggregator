@@ -4,8 +4,9 @@ AI-powered news aggregator that fetches top stories three times a day, sources p
 
 ## Features
 
-- **3x daily digests** — Morning (8 AM), Midday (2 PM), Evening (8 PM)
-- **AI aggregation** — Claude reads articles from dozens of sources and extracts key facts
+- **2x daily digests** — Morning (8 AM CT), Evening (4 PM CT)
+- **AI-powered story discovery** — Claude searches the web to find the top stories across each category
+- **AI aggregation** — Claude synthesizes articles from diverse sources into comprehensive reports
 - **Multi-perspective reporting** — Each story shows viewpoints from different political and editorial angles
 - **Source transparency** — Every claim links back to the original article
 - **Category filtering** — Choose which topics to include (tech, politics, world, business, etc.)
@@ -14,8 +15,7 @@ AI-powered news aggregator that fetches top stories three times a day, sources p
 ## Tech Stack
 
 - **Next.js 15** (App Router)
-- **Claude AI** (Anthropic) — story aggregation and balanced reporting
-- **NewsAPI** — headline fetching from 80,000+ news sources
+- **Claude AI** (Anthropic) — web search for story discovery + aggregation and balanced reporting
 - **Vercel KV** (Redis) — digest storage
 - **Vercel Cron Jobs** — scheduled digest generation
 - **Tailwind CSS v4 + shadcn/ui** — UI components
@@ -41,7 +41,6 @@ Fill in:
 | Variable | Where to get it |
 |---|---|
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
-| `NEWS_API_KEY` | [newsapi.org/register](https://newsapi.org/register) (free) |
 | `KV_REST_API_URL` | Vercel KV dashboard (see below) |
 | `KV_REST_API_TOKEN` | Vercel KV dashboard |
 | `CRON_SECRET` | Any random string |
