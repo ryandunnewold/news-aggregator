@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { RawArticle, AggregatedStory, NewsCategory } from "./types";
+import type { RawArticle, AggregatedStory } from "./types";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -8,16 +8,16 @@ const client = new Anthropic({
 /**
  * Groups raw articles into story clusters by topic and aggregates each
  * into a balanced, factual report with diverse perspectives.
+ * Returns exactly 10 stories (or fewer if not enough source material).
  */
 export async function aggregateNewsStories(
-  articles: RawArticle[],
-  category: NewsCategory
+  articles: RawArticle[]
 ): Promise<AggregatedStory[]> {
   if (articles.length === 0) return [];
 
   // Format articles for the prompt, including content when available
   const articlesText = articles
-    .slice(0, 30) // Cap to avoid token limits
+    .slice(0, 50) // Cap to avoid token limits
     .map(
       (a, i) =>
         `[${i + 1}] SOURCE: ${a.source.name}
@@ -32,14 +32,16 @@ PUBLISHED: ${a.publishedAt}
 
   const prompt = `You are a neutral, factual news aggregator. Your job is to analyze news articles from diverse sources and create detailed, balanced summaries that give the reader all the substantive information so they don't need to click through to the original articles.
 
-Below are news articles from various sources about ${category} topics. These sources represent different political and editorial perspectives.
+Below are news articles from various sources covering today's top stories. These sources represent different political and editorial perspectives.
 
 ARTICLES:
 ${articlesText}
 
 Your task:
-1. Identify the 3-5 most significant, distinct news stories from these articles
-2. For each story, create a detailed, factual aggregated report
+1. Group these articles into distinct news stories (articles about the same event/topic belong together)
+2. Rank stories by importance and significance
+3. Return exactly 10 stories (or fewer if there aren't enough distinct stories)
+4. Each story should be a single topic — do NOT combine unrelated stories
 
 Return a JSON array of story objects. Each story must follow this exact schema:
 {
@@ -57,7 +59,6 @@ Return a JSON array of story objects. Each story must follow this exact schema:
   "sources": [
     { "name": "Source name", "url": "Article URL" }
   ],
-  "category": "${category}",
   "imageUrl": "Use the best image URL from the articles if available, or omit"
 }
 
@@ -101,8 +102,7 @@ IMPORTANT GUIDELINES:
  */
 export async function generateDigestIntro(
   period: "morning" | "evening",
-  storyCount: number,
-  categories: NewsCategory[]
+  storyCount: number
 ): Promise<string> {
   const periodLabels = {
     morning: "morning",
@@ -115,7 +115,7 @@ export async function generateDigestIntro(
     messages: [
       {
         role: "user",
-        content: `Write a brief, neutral 1-2 sentence introduction for a ${periodLabels[period]} news digest. It covers ${storyCount} stories across: ${categories.join(", ")}. Be concise, professional, and non-partisan. No greetings or sign-offs.`,
+        content: `Write a brief, neutral 1-2 sentence introduction for a ${periodLabels[period]} news digest. It covers ${storyCount} top stories from today. Be concise, professional, and non-partisan. No greetings or sign-offs.`,
       },
     ],
   });

@@ -1,11 +1,6 @@
-import { getSettings } from "@/lib/storage";
-import { CategorySettings } from "@/components/CategorySettings";
-
 export const dynamic = "force-dynamic";
 
-export default async function SettingsPage() {
-  const settings = await getSettings();
-
+export default function SettingsPage() {
   return (
     <div style={{ maxWidth: "600px" }}>
       {/* Page header */}
@@ -29,12 +24,35 @@ export default async function SettingsPage() {
           Settings
         </h1>
         <p style={{ fontSize: "13px", color: "#9e9a90", margin: 0 }}>
-          Customize your news digest preferences.
+          How NewsLens works for you.
         </p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-        <CategorySettings initialCategories={settings.categories} />
+        {/* Story curation info */}
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e8e4dc",
+            borderRadius: "12px",
+            padding: "24px",
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: "18px",
+              fontWeight: 400,
+              color: "#1a1a18",
+              marginBottom: "12px",
+            }}
+          >
+            Story Curation
+          </h2>
+          <p style={{ fontSize: "14px", color: "#6b6860", margin: 0, lineHeight: 1.65 }}>
+            NewsLens uses AI to find the 10 most important stories happening right now, across all topics. Use the <strong style={{ color: "#1a1a18" }}>&ldquo;Not interesting&rdquo;</strong> button on any story to teach it what you care about. Over time, it will learn to avoid topics you don&rsquo;t find relevant.
+          </p>
+        </div>
 
         {/* Schedule info */}
         <div
@@ -58,14 +76,13 @@ export default async function SettingsPage() {
               Digest Schedule
             </h2>
             <p style={{ fontSize: "13px", color: "#6b6860", margin: 0 }}>
-              News digests are automatically generated three times a day.
+              News digests are automatically generated twice a day.
             </p>
           </div>
           <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
-              { symbol: "☀", label: "Morning Briefing", time: "8:00 AM CT", desc: "Start your day with the top overnight and early morning stories." },
-              { symbol: "◐", label: "Midday Update", time: "2:00 PM CT", desc: "Catch up on developments from the morning." },
-              { symbol: "◑", label: "Evening Wrap-Up", time: "8:00 PM CT", desc: "Review the day's most significant stories." },
+              { symbol: "\u2600", label: "Morning Briefing", time: "8:00 AM CT", desc: "Start your day with the top overnight and early morning stories." },
+              { symbol: "\u25D1", label: "Evening Wrap-Up", time: "4:00 PM CT", desc: "Review the day\u2019s most significant stories." },
             ].map((item) => (
               <div
                 key={item.label}
@@ -113,10 +130,10 @@ export default async function SettingsPage() {
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
-              { n: "1", title: "Fetch", body: "NewsLens pulls top headlines from dozens of sources across the political spectrum, including left-leaning, centrist, and right-leaning outlets." },
+              { n: "1", title: "Search", body: "AI searches the web for the most significant news stories happening right now across all topics." },
               { n: "2", title: "Aggregate", body: "Claude AI groups articles into story clusters and identifies the key facts, filtering out editorial opinion." },
               { n: "3", title: "Balance", body: "For each story, Claude surfaces perspectives from different viewpoints so you see the full picture." },
-              { n: "4", title: "Cite", body: "Every claim links back to the original source, so you can read the full article yourself." },
+              { n: "4", title: "Learn", body: "Mark stories as \u201Cnot interesting\u201D and future digests will avoid similar topics." },
             ].map((step) => (
               <div key={step.n} style={{ display: "flex", gap: "14px" }}>
                 <span
@@ -138,7 +155,7 @@ export default async function SettingsPage() {
                   {step.n}
                 </span>
                 <p style={{ fontSize: "14px", color: "#6b6860", margin: 0, lineHeight: 1.65 }}>
-                  <strong style={{ color: "#1a1a18", fontWeight: 600 }}>{step.title}</strong> — {step.body}
+                  <strong style={{ color: "#1a1a18", fontWeight: 600 }}>{step.title}</strong> &mdash; {step.body}
                 </p>
               </div>
             ))}

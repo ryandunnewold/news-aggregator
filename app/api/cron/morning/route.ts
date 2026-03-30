@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { generateDigest } from "@/lib/digest";
-import { getSettings } from "@/lib/storage";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -12,8 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const settings = await getSettings();
-  const digest = await generateDigest(settings.categories, "morning");
+  const digest = await generateDigest("morning");
 
   return NextResponse.json({
     success: true,

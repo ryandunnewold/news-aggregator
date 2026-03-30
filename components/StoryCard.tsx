@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { ExternalLink, ChevronDown, ChevronUp, Check, SkipForward } from "lucide-react";
 import type { AggregatedStory } from "@/lib/types";
-import { ALL_CATEGORIES } from "@/lib/types";
 
 interface StoryCardProps {
   story: AggregatedStory;
@@ -74,9 +73,6 @@ export function StoryCard({ story, index }: StoryCardProps) {
   const [read, setRead] = useState(false);
   const [skipped, setSkipped] = useState(false);
 
-  const categoryLabel =
-    ALL_CATEGORIES.find((c) => c.value === story.category)?.label ??
-    story.category;
   const accent = ACCENT_COLORS[index % ACCENT_COLORS.length];
 
   if (skipped) {
@@ -148,7 +144,7 @@ export function StoryCard({ story, index }: StoryCardProps) {
               color: "#9e9a90",
             }}
           >
-            {categoryLabel}
+            Story {index + 1}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span

@@ -1,183 +1,88 @@
-import type { RawArticle, NewsCategory } from "./types";
+import Anthropic from "@anthropic-ai/sdk";
+import type { RawArticle } from "./types";
+import { getRecentFeedback } from "./storage";
 
-const NEWS_API_BASE = "https://newsapi.org/v2";
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
-// Map our categories to NewsAPI top-headlines categories
-const CATEGORY_MAP: Partial<Record<NewsCategory, string>> = {
-  general: "general",
-  technology: "technology",
-  business: "business",
-  science: "science",
-  health: "health",
-  sports: "sports",
-  entertainment: "entertainment",
-};
+/**
+ * Uses Claude with web search to discover the top 10 news stories happening right now.
+ * Searches broadly across all topics — no fixed categories.
+ * Incorporates user feedback to avoid topics they've marked as not interesting.
+ */
+export async function searchTopStories(): Promise<RawArticle[]> {
+  // Load recent feedback to avoid topics the user doesn't care about
+  const feedback = await getRecentFeedback(30);
+  const rejectedTopics = feedback.map((f) => f.headline).slice(0, 20);
 
-// Categories that need keyword-based searching via the everything endpoint
-const KEYWORD_MAP: Partial<Record<NewsCategory, string>> = {
-  politics: "politics OR government OR congress OR senate OR election",
-  world: "international OR global OR foreign policy",
-  nation: "domestic policy OR national OR federal OR legislation",
-  environment: "climate OR environment OR sustainability OR renewable energy",
-};
+  let avoidClause = "";
+  if (rejectedTopics.length > 0) {
+    avoidClause = `\n\nIMPORTANT — The reader has previously marked these stories/topics as NOT interesting. Avoid similar topics:
+${rejectedTopics.map((t) => `- "${t}"`).join("\n")}
+Steer away from these subjects unless there is a truly major breaking development.`;
+  }
 
-// Known sources with political lean for diverse sourcing
-const DIVERSE_SOURCES_BY_CATEGORY: Record<string, string[]> = {
-  politics: [
-    "the-wall-street-journal",
-    "the-washington-post",
-    "fox-news",
-    "msnbc",
-    "abc-news",
-    "cbs-news",
-    "nbc-news",
-    "reuters",
-    "associated-press",
-    "the-hill",
-    "politico",
-    "axios",
-  ],
-  general: [
-    "reuters",
-    "associated-press",
-    "bbc-news",
-    "the-guardian",
-    "the-new-york-times",
-    "fox-news",
-    "cnn",
-    "bloomberg",
-    "the-atlantic",
-    "axios",
-  ],
-  technology: [
-    "techcrunch",
-    "wired",
-    "the-verge",
-    "ars-technica",
-    "hacker-news",
-    "engadget",
-    "recode",
-  ],
-  business: [
-    "bloomberg",
-    "the-wall-street-journal",
-    "financial-times",
-    "the-economist",
-    "business-insider",
-    "fortune",
-    "cnbc",
-  ],
-  world: [
-    "reuters",
-    "associated-press",
-    "bbc-news",
-    "al-jazeera-english",
-    "the-guardian",
-    "the-new-york-times",
-  ],
-  nation: [
-    "reuters",
-    "associated-press",
-    "the-washington-post",
-    "the-new-york-times",
-    "politico",
-    "the-hill",
-    "axios",
-  ],
-  environment: [
-    "reuters",
-    "associated-press",
-    "bbc-news",
-    "the-guardian",
-    "the-new-york-times",
-    "national-geographic",
-  ],
-  default: ["reuters", "associated-press", "bbc-news", "cnn", "fox-news"],
-};
+  const response = await client.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 8192,
+    tools: [
+      {
+        type: "web_search_20250305",
+        name: "web_search",
+        max_uses: 10,
+      },
+    ],
+    messages: [
+      {
+        role: "user",
+        content: `Search the web for today's most important and newsworthy stories. Find the top 10 stories that matter most right now across any topic — politics, business, technology, science, health, world affairs, culture, sports, environment, or anything else that's genuinely significant.
 
-// Exclusion patterns per category — articles matching these are filtered out after fetch
-const CATEGORY_EXCLUSION_PATTERNS: Partial<Record<NewsCategory, RegExp>> = {
-  technology:
-    /\b(video\s*game|video\s*games|gaming|playstation|xbox|nintendo|game\s*release|esports|e-sports|twitch|steam\s*sale)\b/i,
-  entertainment:
-    /\b(video\s*game|video\s*games|gaming|esports|e-sports|twitch)\b/i,
-};
+Do NOT limit yourself to one story per topic. If 3 of the top 10 stories are about politics, that's fine. Pick the 10 most important stories overall.
 
-function getSources(category: NewsCategory): string {
-  const sources =
-    DIVERSE_SOURCES_BY_CATEGORY[category] ||
-    DIVERSE_SOURCES_BY_CATEGORY.default;
-  return sources.slice(0, 20).join(",");
+Exclude video game and gaming news unless it has major business or cultural significance.
+
+For each story, search for multiple sources covering it so we get diverse perspectives.${avoidClause}
+
+Return a JSON array of articles. Each article must have this exact schema:
+{
+  "title": "Article headline",
+  "description": "2-3 sentence summary of the article",
+  "content": "Detailed 4-6 sentence description with specific facts, names, numbers, and quotes from the article",
+  "url": "URL of the source article",
+  "urlToImage": "URL of an image if available, or null",
+  "publishedAt": "ISO date string of when published",
+  "source": {
+    "id": null,
+    "name": "Name of the news source"
+  }
 }
 
-function filterExcludedArticles(
-  articles: RawArticle[],
-  category: NewsCategory
-): RawArticle[] {
-  const pattern = CATEGORY_EXCLUSION_PATTERNS[category];
-  if (!pattern) return articles;
-
-  return articles.filter((article) => {
-    const text = `${article.title || ""} ${article.description || ""}`;
-    return !pattern.test(text);
+IMPORTANT:
+- Find REAL, currently active news stories with REAL URLs from actual news sources
+- For each of the 10 major stories, include 2-3 articles from different sources covering the same story
+- That means 20-30 articles total, grouped by story
+- Include diverse sources: mainstream, wire services, and specialty outlets
+- Every URL must be a real, working link you found via web search
+- Return ONLY the JSON array, no other text`,
+      },
+    ],
   });
-}
 
-async function fetchTopHeadlines(
-  category: NewsCategory,
-  pageSize = 10
-): Promise<RawArticle[]> {
-  const apiKey = process.env.NEWS_API_KEY;
-  if (!apiKey) throw new Error("NEWS_API_KEY is not set");
-
-  const newsApiCategory = CATEGORY_MAP[category];
-  const keyword = KEYWORD_MAP[category];
-
-  let url: string;
-
-  if (newsApiCategory) {
-    // Use category endpoint for supported categories
-    url = `${NEWS_API_BASE}/top-headlines?category=${newsApiCategory}&language=en&pageSize=${pageSize}&apiKey=${apiKey}`;
-  } else if (keyword) {
-    // Use everything endpoint with keyword search + diverse sources
-    const sources = getSources(category);
-    url = `${NEWS_API_BASE}/everything?q=${encodeURIComponent(keyword)}&language=en&sortBy=publishedAt&pageSize=${pageSize}&sources=${sources}&apiKey=${apiKey}`;
-  } else {
-    url = `${NEWS_API_BASE}/top-headlines?language=en&pageSize=${pageSize}&apiKey=${apiKey}`;
-  }
-
-  const res = await fetch(url, { next: { revalidate: 0 } });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`NewsAPI error ${res.status}: ${err}`);
-  }
-
-  const data = await res.json();
-  const articles = (data.articles as RawArticle[]) || [];
-  return filterExcludedArticles(articles, category);
-}
-
-async function fetchDiverseArticles(
-  category: NewsCategory,
-  topicKeyword: string,
-  pageSize = 8
-): Promise<RawArticle[]> {
-  const apiKey = process.env.NEWS_API_KEY;
-  if (!apiKey) return [];
-
-  const sources = getSources(category);
-  const url = `${NEWS_API_BASE}/everything?q=${encodeURIComponent(topicKeyword)}&language=en&sortBy=publishedAt&pageSize=${pageSize}&sources=${sources}&apiKey=${apiKey}`;
+  // Extract the text response (after web search tool use)
+  const textBlock = response.content.find((block) => block.type === "text");
+  if (!textBlock || textBlock.type !== "text") return [];
 
   try {
-    const res = await fetch(url, { next: { revalidate: 0 } });
-    if (!res.ok) return [];
-    const data = await res.json();
-    const articles = (data.articles as RawArticle[]) || [];
-    return filterExcludedArticles(articles, category);
-  } catch {
+    const text = textBlock.text.trim();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) return [];
+    const articles = JSON.parse(jsonMatch[0]) as RawArticle[];
+    return articles;
+  } catch (e) {
+    console.error("Failed to parse web search results:", e);
     return [];
   }
 }
 
 export type { RawArticle };
-export { fetchTopHeadlines, fetchDiverseArticles };
