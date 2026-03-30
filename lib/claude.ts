@@ -106,7 +106,7 @@ export async function generateDigestIntro(
 ): Promise<string> {
   const periodLabels = {
     morning: "morning",
-    evening: "evening",
+    evening: "afternoon",
   };
 
   const message = await client.messages.create({

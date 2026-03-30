@@ -81,8 +81,8 @@ export default function SettingsPage() {
           </div>
           <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
-              { symbol: "\u2600", label: "Morning Briefing", time: "8:00 AM CT", desc: "Start your day with the top overnight and early morning stories." },
-              { symbol: "\u25D1", label: "Evening Wrap-Up", time: "4:00 PM CT", desc: "Review the day\u2019s most significant stories." },
+              { symbol: "\u2600", label: "Morning Briefing", time: "7:00 AM CT", desc: "Start your day with the top overnight and early morning stories." },
+              { symbol: "\u25D1", label: "Afternoon Wrap-Up", time: "2:00 PM CT", desc: "Catch up on the day\u2019s developing stories." },
             ].map((item) => (
               <div
                 key={item.label}

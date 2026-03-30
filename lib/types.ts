@@ -52,12 +52,12 @@ export interface StoryFeedback {
 
 export const PERIOD_LABELS: Record<DigestPeriod, string> = {
   morning: "Morning Briefing",
-  evening: "Evening Wrap-Up",
+  evening: "Afternoon Wrap-Up",
 };
 
 export const PERIOD_TIMES: Record<DigestPeriod, string> = {
-  morning: "8:00 AM CT",
-  evening: "4:00 PM CT",
+  morning: "7:00 AM CT",
+  evening: "2:00 PM CT",
 };
 
 export const PERIOD_SYMBOLS: Record<DigestPeriod, string> = {
