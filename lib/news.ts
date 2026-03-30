@@ -23,6 +23,7 @@ ${rejectedTopics.map((t) => `- "${t}"`).join("\n")}
 Steer away from these subjects unless there is a truly major breaking development.`;
   }
 
+  console.log("[news] Calling Claude with web_search tool...");
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 8192,
@@ -69,19 +70,35 @@ IMPORTANT:
     ],
   });
 
+  console.log(
+    `[news] Response received: stop_reason=${response.stop_reason}, blocks=${response.content.length}`
+  );
+
   // Extract the text response (after web search tool use)
   const textBlock = response.content.find((block) => block.type === "text");
-  if (!textBlock || textBlock.type !== "text") return [];
+  if (!textBlock || textBlock.type !== "text") {
+    console.error(
+      "[news] No text block in response. Block types:",
+      response.content.map((b) => b.type)
+    );
+    throw new Error(
+      `Claude response contained no text block. Block types: ${response.content.map((b) => b.type).join(", ")}`
+    );
+  }
 
   try {
     const text = textBlock.text.trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
+    if (!jsonMatch) {
+      console.error("[news] No JSON array found in response text:", text.slice(0, 500));
+      throw new Error("Claude response did not contain a JSON array");
+    }
     const articles = JSON.parse(jsonMatch[0]) as RawArticle[];
+    console.log(`[news] Parsed ${articles.length} articles from response`);
     return articles;
   } catch (e) {
-    console.error("Failed to parse web search results:", e);
-    return [];
+    console.error("[news] Failed to parse web search results:", e);
+    throw e;
   }
 }
 

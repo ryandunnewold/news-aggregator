@@ -74,6 +74,7 @@ IMPORTANT GUIDELINES:
 - Do not fabricate information. Only use what's in the provided articles.
 - Return ONLY the JSON array, no other text.`;
 
+  console.log(`[claude] Aggregating ${articles.length} articles...`);
   const message = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 8192,
@@ -81,18 +82,25 @@ IMPORTANT GUIDELINES:
   });
 
   const content = message.content[0];
-  if (content.type !== "text") return [];
+  if (content.type !== "text") {
+    console.error("[claude] Unexpected content type:", content.type);
+    throw new Error(`Aggregation response was ${content.type}, expected text`);
+  }
 
   try {
     // Extract JSON from response
     const text = content.text.trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
+    if (!jsonMatch) {
+      console.error("[claude] No JSON array in aggregation response:", text.slice(0, 500));
+      throw new Error("Aggregation response did not contain a JSON array");
+    }
     const stories = JSON.parse(jsonMatch[0]) as AggregatedStory[];
+    console.log(`[claude] Aggregated into ${stories.length} stories`);
     return stories;
   } catch (e) {
-    console.error("Failed to parse Claude response:", e);
-    return [];
+    console.error("[claude] Failed to parse Claude response:", e);
+    throw e;
   }
 }
 

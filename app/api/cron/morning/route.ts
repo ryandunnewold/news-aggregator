@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { generateDigest } from "@/lib/digest";
-import { getCurrentHourInUserTZ } from "@/lib/timezone";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -12,20 +11,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (getCurrentHourInUserTZ() !== 7) {
+  try {
+    console.log("[cron/morning] Starting morning digest generation");
+    const digest = await generateDigest("morning");
+    console.log(
+      `[cron/morning] Digest generated: ${digest.stories.length} stories, id=${digest.id}`
+    );
+
     return NextResponse.json({
       success: true,
-      skipped: true,
-      reason: "Outside morning digest window",
+      period: "morning",
+      storiesGenerated: digest.stories.length,
+      digestId: digest.id,
     });
+  } catch (error) {
+    console.error("[cron/morning] Failed to generate digest:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
-
-  const digest = await generateDigest("morning");
-
-  return NextResponse.json({
-    success: true,
-    period: "morning",
-    storiesGenerated: digest.stories.length,
-    digestId: digest.id,
-  });
 }
