@@ -23,6 +23,6 @@ export async function POST(request: Request) {
 
 function currentPeriod(): DigestPeriod {
   const hour = getCurrentHourInUserTZ();
-  if (hour < 12) return "morning";
+  if (hour < 14) return "morning";
   return "evening";
 }

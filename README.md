@@ -74,16 +74,16 @@ curl -X POST http://localhost:3000/api/digest \
 4. Create a KV store and link it to the project
 5. Deploy
 
-The `vercel.json` cron configuration will automatically schedule the two daily digests.
+The `vercel.json` cron configuration schedules duplicate UTC runs around the DST boundary, and each cron route only generates a digest during the intended Chicago-local hour.
 
 ## Cron Schedule
 
-| Digest | Time (UTC) | Time (CT) | Endpoint |
+| Digest | Times (UTC) | Intended Time (CT) | Endpoint |
 |---|---|---|---|
-| Morning | 1:00 PM | 7:00 AM | `/api/cron/morning` |
-| Afternoon | 8:00 PM | 2:00 PM | `/api/cron/evening` |
+| Morning | 12:00 PM and 1:00 PM | 7:00 AM year-round | `/api/cron/morning` |
+| Afternoon | 7:00 PM and 8:00 PM | 2:00 PM year-round | `/api/cron/evening` |
 
-> **Note:** Vercel Cron Jobs run in UTC. Adjust the schedule in `vercel.json` if needed for your timezone.
+> **Note:** Vercel Cron Jobs run in UTC and do not follow daylight saving time automatically. This app schedules both the CST and CDT UTC hours and skips any invocation that does not match the intended Chicago-local digest hour.
 
 ## API Reference
 
