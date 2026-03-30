@@ -4,7 +4,7 @@ AI-powered news aggregator that fetches top stories three times a day, sources p
 
 ## Features
 
-- **2x daily digests** — Morning (8 AM CT), Evening (4 PM CT)
+- **2x daily digests** — Morning (7 AM CT), Afternoon (2 PM CT)
 - **AI-powered story discovery** — Claude searches the web to find the top stories across each category
 - **AI aggregation** — Claude synthesizes articles from diverse sources into comprehensive reports
 - **Multi-perspective reporting** — Each story shows viewpoints from different political and editorial angles
@@ -74,15 +74,14 @@ curl -X POST http://localhost:3000/api/digest \
 4. Create a KV store and link it to the project
 5. Deploy
 
-The `vercel.json` cron configuration will automatically schedule the three daily digests.
+The `vercel.json` cron configuration will automatically schedule the two daily digests.
 
 ## Cron Schedule
 
-| Digest | Time | Endpoint |
-|---|---|---|
-| Morning | 8:00 AM UTC | `/api/cron/morning` |
-| Midday | 2:00 PM UTC | `/api/cron/midday` |
-| Evening | 8:00 PM UTC | `/api/cron/evening` |
+| Digest | Time (UTC) | Time (CT) | Endpoint |
+|---|---|---|---|
+| Morning | 1:00 PM | 7:00 AM | `/api/cron/morning` |
+| Afternoon | 8:00 PM | 2:00 PM | `/api/cron/evening` |
 
 > **Note:** Vercel Cron Jobs run in UTC. Adjust the schedule in `vercel.json` if needed for your timezone.
 
