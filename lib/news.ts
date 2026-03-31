@@ -12,9 +12,12 @@ const client = new Anthropic({
  * Incorporates user feedback to avoid topics they've marked as not interesting.
  */
 export async function searchTopStories(): Promise<RawArticle[]> {
+  console.log("[news] searchTopStories called");
+
   // Load recent feedback to avoid topics the user doesn't care about
   const feedback = await getRecentFeedback(30);
   const rejectedTopics = feedback.map((f) => f.headline).slice(0, 20);
+  console.log(`[news] Loaded ${feedback.length} feedback entries, ${rejectedTopics.length} rejected topics`);
 
   let avoidClause = "";
   if (rejectedTopics.length > 0) {
@@ -23,7 +26,7 @@ ${rejectedTopics.map((t) => `- "${t}"`).join("\n")}
 Steer away from these subjects unless there is a truly major breaking development.`;
   }
 
-  console.log("[news] Calling Claude with web_search tool...");
+  console.log("[news] Sending web search request to Claude Haiku...");
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 8192,
@@ -70,9 +73,9 @@ IMPORTANT:
     ],
   });
 
-  console.log(
-    `[news] Response received: stop_reason=${response.stop_reason}, blocks=${response.content.length}`
-  );
+  // Log response metadata
+  const contentTypes = response.content.map((block) => block.type);
+  console.log(`[news] Claude response received: stop_reason=${response.stop_reason}, content_blocks=${response.content.length} (types: ${contentTypes.join(", ")}), usage: input=${response.usage.input_tokens} output=${response.usage.output_tokens}`);
 
   // Extract the text response (after web search tool use)
   const textBlock = response.content.find((block) => block.type === "text");
@@ -94,7 +97,7 @@ IMPORTANT:
       throw new Error("Claude response did not contain a JSON array");
     }
     const articles = JSON.parse(jsonMatch[0]) as RawArticle[];
-    console.log(`[news] Parsed ${articles.length} articles from response`);
+    console.log(`[news] Parsed ${articles.length} articles from ${new Set(articles.map((a) => a.source.name)).size} unique sources`);
     return articles;
   } catch (e) {
     console.error("[news] Failed to parse web search results:", e);

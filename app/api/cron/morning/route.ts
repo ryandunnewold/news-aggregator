@@ -5,18 +5,22 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function GET(request: Request) {
+  console.log("[cron/morning] Morning cron triggered");
+
   // Verify cron secret
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    console.warn("[cron/morning] Unauthorized request — invalid CRON_SECRET");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     console.log("[cron/morning] Starting morning digest generation");
+    const startTime = Date.now();
     const digest = await generateDigest("morning");
-    console.log(
-      `[cron/morning] Digest generated: ${digest.stories.length} stories, id=${digest.id}`
-    );
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+    console.log(`[cron/morning] Completed in ${elapsed}s — digestId=${digest.id}, stories=${digest.stories.length}`);
 
     return NextResponse.json({
       success: true,
