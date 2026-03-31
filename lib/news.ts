@@ -1,183 +1,21 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { RawArticle } from "./types";
 import { getRecentFeedback } from "./storage";
+import { braveNewsSearch } from "./brave";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const SUBMIT_TOPICS_TOOL: Anthropic.Tool = {
-  name: "submit_topics",
-  description:
-    "Submit the list of top news topics. Call this tool once with all topics.",
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      topics: {
-        type: "array",
-        items: { type: "string" },
-        description: "Array of 10 specific, searchable news topic descriptions",
-      },
-    },
-    required: ["topics"],
-  },
-};
-
-const SUBMIT_ARTICLES_TOOL: Anthropic.Tool = {
-  name: "submit_articles",
-  description:
-    "Submit the collected news articles as structured data. Call this tool once with all articles.",
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      articles: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            title: { type: "string", description: "Article headline" },
-            description: {
-              type: "string",
-              description: "2-3 sentence summary of the article",
-            },
-            content: {
-              type: "string",
-              description:
-                "Detailed 4-6 sentence description with specific facts, names, numbers, and quotes",
-            },
-            url: { type: "string", description: "URL of the source article" },
-            urlToImage: {
-              type: ["string", "null"],
-              description: "URL of an image if available, or null",
-            },
-            publishedAt: {
-              type: "string",
-              description: "ISO date string of when published",
-            },
-            source: {
-              type: "object",
-              properties: {
-                id: { type: ["string", "null"] },
-                name: {
-                  type: "string",
-                  description: "Name of the news source",
-                },
-              },
-              required: ["id", "name"],
-            },
-          },
-          required: [
-            "title",
-            "description",
-            "content",
-            "url",
-            "urlToImage",
-            "publishedAt",
-            "source",
-          ],
-        },
-      },
-    },
-    required: ["articles"],
-  },
-};
-
-/**
- * Uses Claude to identify the top 10 news topics happening right now.
- * A quick call with a single web search to ground in current events.
- */
-async function discoverTopics(avoidClause: string): Promise<string[]> {
-  console.log("[news] Discovering top 10 news topics...");
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 2048,
-    tools: [
-      {
-        type: "web_search_20250305",
-        name: "web_search",
-        max_uses: 2,
-      },
-      SUBMIT_TOPICS_TOOL,
-    ],
-    tool_choice: { type: "any" },
-    messages: [
-      {
-        role: "user",
-        content: `Search the web and identify the top 10 most important and newsworthy stories happening right now. Consider all topics — politics, business, technology, science, health, world affairs, culture, sports, environment, or anything else that's genuinely significant.
-
-Do NOT limit yourself to one story per topic. If 3 of the top 10 stories are about politics, that's fine. Pick the 10 most important stories overall.
-
-Exclude video game and gaming news unless it has major business or cultural significance.${avoidClause}
-
-After searching, call the submit_topics tool with exactly 10 topic strings. Each topic should be a specific, searchable news story description (e.g., "US Senate votes on infrastructure bill", "Tesla Q1 earnings report", "Earthquake in Turkey").`,
-      },
-    ],
-  });
-
-  const toolUseBlock = response.content.find(
-    (block) => block.type === "tool_use" && block.name === "submit_topics"
-  );
-
-  if (!toolUseBlock || toolUseBlock.type !== "tool_use") {
-    console.error("[news] No submit_topics tool call found in topic discovery response");
-    return [];
-  }
-
-  const input = toolUseBlock.input as { topics: string[] };
-  console.log(`[news] Discovered ${input.topics.length} topics`);
-  return input.topics;
+interface SearchQuery {
+  topic: string;
+  query: string;
 }
 
 /**
- * Searches for 2-3 articles on a specific news topic using web search.
- * Each call is fast since it only needs to find articles for one topic.
- */
-async function searchTopicArticles(topic: string): Promise<RawArticle[]> {
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 4096,
-    tools: [
-      {
-        type: "web_search_20250305",
-        name: "web_search",
-        max_uses: 2,
-      },
-      SUBMIT_ARTICLES_TOOL,
-    ],
-    tool_choice: { type: "any" },
-    messages: [
-      {
-        role: "user",
-        content: `Search the web for news articles about this specific story: "${topic}"
-
-Find 2-3 articles from different news sources covering this story. Include diverse sources: mainstream, wire services, and specialty outlets.
-
-After searching, call the submit_articles tool with the articles you found.
-
-IMPORTANT:
-- Every URL must be a real, working link you found via web search
-- Include 2-3 articles from different sources`,
-      },
-    ],
-  });
-
-  const toolUseBlock = response.content.find(
-    (block) => block.type === "tool_use" && block.name === "submit_articles"
-  );
-
-  if (!toolUseBlock || toolUseBlock.type !== "tool_use") {
-    console.warn(`[news] No submit_articles tool call for topic "${topic}"`);
-    return [];
-  }
-
-  const input = toolUseBlock.input as { articles: RawArticle[] };
-  return input.articles;
-}
-
-/**
- * Uses Claude with web search to discover the top 10 news stories happening right now.
- * First discovers topics, then searches for articles on each topic sequentially.
- * This approach keeps each web search call short, avoiding Vercel timeouts.
+ * Uses Claude to determine the best search queries for today's top news,
+ * then executes those queries via Brave Search API,
+ * and returns the results as RawArticle[].
  */
 export async function searchTopStories(): Promise<RawArticle[]> {
   console.log("[news] searchTopStories called");
@@ -189,31 +27,127 @@ export async function searchTopStories(): Promise<RawArticle[]> {
 
   let avoidClause = "";
   if (rejectedTopics.length > 0) {
-    avoidClause = `\n\nIMPORTANT — The reader has previously marked these stories/topics as NOT interesting. Avoid similar topics:
+    avoidClause = `\n\nIMPORTANT — The reader has previously marked these stories/topics as NOT interesting. Avoid generating queries for similar topics:
 ${rejectedTopics.map((t) => `- "${t}"`).join("\n")}
 Steer away from these subjects unless there is a truly major breaking development.`;
   }
 
-  // Step 1: Discover the top 10 topics
-  const searchStart = Date.now();
-  const topics = await discoverTopics(avoidClause);
-  if (topics.length === 0) {
-    console.error("[news] Topic discovery returned no topics");
+  // Step 1: Ask Claude to generate search queries for today's top stories
+  console.log("[news] Asking Claude to generate search queries...");
+  const queries = await generateSearchQueries(avoidClause);
+  console.log(`[news] Claude generated ${queries.length} search queries`);
+
+  // Step 2: Execute each query via Brave Search API
+  console.log("[news] Executing Brave searches...");
+  const allArticles: RawArticle[] = [];
+  const seenUrls = new Set<string>();
+
+  for (const { topic, query } of queries) {
+    try {
+      const results = await braveNewsSearch(query, 5);
+      console.log(
+        `[news] Brave returned ${results.length} results for "${topic}"`
+      );
+
+      for (const result of results) {
+        if (seenUrls.has(result.url)) continue;
+        seenUrls.add(result.url);
+
+        allArticles.push({
+          title: result.title,
+          description: result.description,
+          content: result.description, // Brave provides description/snippet
+          url: result.url,
+          urlToImage: result.thumbnail?.src ?? null,
+          publishedAt: new Date().toISOString(),
+          source: {
+            id: null,
+            name: extractSourceName(result.url),
+          },
+        });
+      }
+    } catch (e) {
+      console.error(`[news] Brave search failed for "${topic}":`, e);
+      // Continue with other queries
+    }
+  }
+
+  console.log(
+    `[news] Collected ${allArticles.length} unique articles from Brave Search`
+  );
+  return allArticles;
+}
+
+/**
+ * Uses Claude to generate search queries for discovering today's top news stories.
+ */
+async function generateSearchQueries(
+  avoidClause: string
+): Promise<SearchQuery[]> {
+  const response = await client.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 2048,
+    messages: [
+      {
+        role: "user",
+        content: `You are a news editor planning today's coverage. Generate search queries to find the top 10 most important and newsworthy stories happening right now.
+
+Think about what's likely making headlines today across politics, business, technology, science, health, world affairs, culture, sports, environment, or any other significant topic.
+
+Do NOT limit yourself to one story per topic. If 3 of the top stories are about politics, that's fine. Pick the 10 most important stories overall.
+
+Exclude video game and gaming news unless it has major business or cultural significance.${avoidClause}
+
+For each story, provide a focused search query that will find recent news articles about it.
+
+Return a JSON array with exactly 10 objects, each with:
+{
+  "topic": "Brief topic label (e.g., 'Ukraine peace negotiations')",
+  "query": "Search query optimized for finding news articles (e.g., 'Ukraine Russia peace talks latest news today')"
+}
+
+IMPORTANT:
+- Make queries specific enough to find relevant articles
+- Include time-relevant terms like "today", "latest", "2026" where appropriate
+- Cover diverse topics — not all politics or all tech
+- Return ONLY the JSON array, no other text`,
+      },
+    ],
+  });
+
+  const content = response.content[0];
+  if (content.type !== "text") return [];
+
+  try {
+    const text = content.text.trim();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error("[news] No JSON array found in query generation response");
+      return [];
+    }
+    return JSON.parse(jsonMatch[0]) as SearchQuery[];
+  } catch (e) {
+    console.error("[news] Failed to parse search queries:", e);
     return [];
   }
-  console.log(`[news] Found ${topics.length} topics in ${((Date.now() - searchStart) / 1000).toFixed(1)}s, searching for articles...`);
+}
 
-  // Step 2: Search for articles on each topic sequentially
-  const allArticles: RawArticle[] = [];
-  for (const topic of topics) {
-    console.log(`[news] Searching articles for: ${topic}`);
-    const articles = await searchTopicArticles(topic);
-    console.log(`[news]   Found ${articles.length} articles`);
-    allArticles.push(...articles);
+/**
+ * Extracts a readable source name from a URL hostname.
+ */
+function extractSourceName(url: string): string {
+  try {
+    const hostname = new URL(url).hostname;
+    // Remove www. prefix and .com/.org/etc suffix for cleaner names
+    return hostname
+      .replace(/^www\./, "")
+      .replace(/\.(com|org|net|co\.uk|io)$/, "")
+      .split(".")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  } catch {
+    return "Unknown";
   }
-
-  console.log(`[news] Total articles found: ${allArticles.length} from ${new Set(allArticles.map((a) => a.source.name)).size} unique sources`);
-  return allArticles;
 }
 
 export type { RawArticle };
