@@ -38,13 +38,13 @@ cp .env.local.example .env.local
 
 Fill in:
 
-| Variable | Where to get it |
-|---|---|
+| Variable            | Where to get it                                        |
+| ------------------- | ------------------------------------------------------ |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
-| `KV_REST_API_URL` | Vercel KV dashboard (see below) |
-| `KV_REST_API_TOKEN` | Vercel KV dashboard |
-| `CRON_SECRET` | Any random string |
-| `ADMIN_SECRET` | Any random string |
+| `KV_REST_API_URL`   | Vercel KV dashboard (see below)                        |
+| `KV_REST_API_TOKEN` | Vercel KV dashboard                                    |
+| `CRON_SECRET`       | Any random string                                      |
+| `ADMIN_SECRET`      | Any random string                                      |
 
 ### 3. Set up Vercel KV (local dev)
 
@@ -74,27 +74,30 @@ curl -X POST http://localhost:3000/api/digest \
 4. Create a KV store and link it to the project
 5. Deploy
 
-The `vercel.json` cron configuration schedules duplicate UTC runs around the DST boundary, and each cron route only generates a digest during the intended Chicago-local hour.
+The `vercel.json` cron configuration schedules both CST and CDT UTC hours for each digest. The digest deduplicates automatically — if one already exists for the date/period, the second cron hit returns the cached version.
 
 ## Cron Schedule
 
-| Digest | Times (UTC) | Intended Time (CT) | Endpoint |
-|---|---|---|---|
-| Morning | 12:00 PM and 1:00 PM | 7:00 AM year-round | `/api/cron/morning` |
-| Afternoon | 7:00 PM and 8:00 PM | 2:00 PM year-round | `/api/cron/evening` |
+| Digest    | Times (UTC)          | Intended Time (CT) | Endpoint            |
+| --------- | -------------------- | ------------------ | ------------------- |
+| Morning   | 12:00 PM and 1:00 PM | 7:00 AM year-round | `/api/cron/morning` |
+| Afternoon | 7:00 PM and 8:00 PM  | 2:00 PM year-round | `/api/cron/evening` |
 
-> **Note:** Vercel Cron Jobs run in UTC and do not follow daylight saving time automatically. This app schedules both the CST and CDT UTC hours and skips any invocation that does not match the intended Chicago-local digest hour.
+> **Note:** Vercel Cron Jobs run in UTC. Both DST offsets are scheduled so the digest runs at the intended local time year-round. Duplicate runs are harmless — the second invocation returns the cached digest.
 
 ## API Reference
 
 ### `GET /api/news`
+
 Returns recent digests (last 7 days by default).
 
 Query params:
+
 - `days` — number of days to fetch (max 30)
 - `date` + `period` — fetch a specific digest
 
 ### `POST /api/settings`
+
 Update category preferences.
 
 ```json
@@ -102,6 +105,7 @@ Update category preferences.
 ```
 
 ### `POST /api/digest`
+
 Manually trigger digest generation (requires `ADMIN_SECRET`).
 
 ```json
