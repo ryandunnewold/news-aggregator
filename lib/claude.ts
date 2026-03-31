@@ -93,7 +93,11 @@ const SUBMIT_STORIES_TOOL: Anthropic.Tool = {
 export async function aggregateNewsStories(
   articles: RawArticle[]
 ): Promise<AggregatedStory[]> {
-  if (articles.length === 0) return [];
+  console.log(`[claude] aggregateNewsStories called with ${articles.length} articles`);
+  if (articles.length === 0) {
+    console.warn("[claude] No articles to aggregate — returning empty");
+    return [];
+  }
 
   // Format articles for the prompt, including content when available
   const articlesText = articles
@@ -136,6 +140,7 @@ IMPORTANT GUIDELINES:
 - Perspectives should represent genuinely different viewpoints, not just different wordings of the same position.
 - Do not fabricate information. Only use what's in the provided articles.`;
 
+  console.log(`[claude] Sending ${Math.min(articles.length, 50)} articles to Claude for aggregation...`);
   const message = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 16384,
@@ -143,6 +148,8 @@ IMPORTANT GUIDELINES:
     tool_choice: { type: "tool", name: "submit_stories" },
     messages: [{ role: "user", content: prompt }],
   });
+
+  console.log(`[claude] Aggregation response: stop_reason=${message.stop_reason}, usage: input=${message.usage.input_tokens} output=${message.usage.output_tokens}`);
 
   const toolUseBlock = message.content.find(
     (block) => block.type === "tool_use" && block.name === "submit_stories"
@@ -157,6 +164,7 @@ IMPORTANT GUIDELINES:
   }
 
   const input = toolUseBlock.input as { stories: AggregatedStory[] };
+  console.log(`[claude] Aggregated into ${input.stories.length} stories: ${input.stories.map((s) => s.headline).join(" | ")}`);
   return input.stories;
 }
 

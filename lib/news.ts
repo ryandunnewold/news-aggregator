@@ -71,9 +71,12 @@ const SUBMIT_ARTICLES_TOOL: Anthropic.Tool = {
  * Incorporates user feedback to avoid topics they've marked as not interesting.
  */
 export async function searchTopStories(): Promise<RawArticle[]> {
+  console.log("[news] searchTopStories called");
+
   // Load recent feedback to avoid topics the user doesn't care about
   const feedback = await getRecentFeedback(30);
   const rejectedTopics = feedback.map((f) => f.headline).slice(0, 20);
+  console.log(`[news] Loaded ${feedback.length} feedback entries, ${rejectedTopics.length} rejected topics`);
 
   let avoidClause = "";
   if (rejectedTopics.length > 0) {
@@ -82,6 +85,7 @@ ${rejectedTopics.map((t) => `- "${t}"`).join("\n")}
 Steer away from these subjects unless there is a truly major breaking development.`;
   }
 
+  console.log("[news] Sending web search request to Claude Haiku...");
   const response = await client.messages.create({
     model: "claude-sonnet-4-5-20250514",
     max_tokens: 16384,
@@ -117,6 +121,10 @@ IMPORTANT:
     ],
   });
 
+  // Log response metadata
+  const contentTypes = response.content.map((block) => block.type);
+  console.log(`[news] Claude response received: stop_reason=${response.stop_reason}, content_blocks=${response.content.length} (types: ${contentTypes.join(", ")}), usage: input=${response.usage.input_tokens} output=${response.usage.output_tokens}`);
+
   // Extract structured output from the submit_articles tool call
   const toolUseBlock = response.content.find(
     (block) => block.type === "tool_use" && block.name === "submit_articles"
@@ -127,12 +135,13 @@ IMPORTANT:
       "[news] No submit_articles tool call found in response. Stop reason:",
       response.stop_reason,
       "Content block types:",
-      response.content.map((b) => b.type)
+      contentTypes
     );
     return [];
   }
 
   const input = toolUseBlock.input as { articles: RawArticle[] };
+  console.log(`[news] Parsed ${input.articles.length} articles from ${new Set(input.articles.map((a) => a.source.name)).size} unique sources`);
   return input.articles;
 }
 
