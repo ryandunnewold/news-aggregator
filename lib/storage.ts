@@ -3,7 +3,7 @@
  * Uses Vercel KV in production, falls back to in-memory for development.
  */
 
-import type { NewsDigest, StoryFeedback } from "./types";
+import type { NewsDigest, StoryFeedback, RawArticle } from "./types";
 import { getDateInUserTZ } from "./timezone";
 
 // In-memory fallback for development
@@ -75,6 +75,50 @@ export async function getRecentDigests(days = 7): Promise<NewsDigest[]> {
 export async function getLatestDigest(): Promise<NewsDigest | null> {
   const digests = await getRecentDigests(3);
   return digests[0] ?? null;
+}
+
+// --- Raw articles (intermediate storage between search and aggregation) ---
+
+const RAW_ARTICLES_TTL = 60 * 60; // 1 hour
+
+function rawArticlesKey(date: string, period: string): string {
+  return `raw-articles:${date}:${period}`;
+}
+
+export async function saveRawArticles(
+  date: string,
+  period: string,
+  articles: RawArticle[]
+): Promise<void> {
+  const key = rawArticlesKey(date, period);
+  console.log(`[storage] Saving ${articles.length} raw articles to key="${key}" (TTL=${RAW_ARTICLES_TTL}s)`);
+  await kvSet(key, articles, RAW_ARTICLES_TTL);
+}
+
+export async function getRawArticles(
+  date: string,
+  period: string
+): Promise<RawArticle[] | null> {
+  const key = rawArticlesKey(date, period);
+  const result = await kvGet<RawArticle[]>(key);
+  console.log(`[storage] getRawArticles key="${key}" — ${result ? `found (${result.length} articles)` : "not found"}`);
+  return result;
+}
+
+async function deleteKey(key: string): Promise<void> {
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    const { kv } = await import("@vercel/kv");
+    await kv.del(key);
+    return;
+  }
+  delete memStore[key];
+}
+
+export async function deleteRawArticles(
+  date: string,
+  period: string
+): Promise<void> {
+  await deleteKey(rawArticlesKey(date, period));
 }
 
 // --- Story feedback ---
