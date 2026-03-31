@@ -41,11 +41,17 @@ export function digestKey(date: string, period: string): string {
 }
 
 export async function saveDigest(digest: NewsDigest): Promise<void> {
-  await kvSet(digestKey(digest.date, digest.period), digest, DIGEST_TTL);
+  const key = digestKey(digest.date, digest.period);
+  console.log(`[storage] Saving digest to key="${key}" (${digest.stories.length} stories, TTL=${DIGEST_TTL}s)`);
+  await kvSet(key, digest, DIGEST_TTL);
+  console.log(`[storage] Digest saved successfully to key="${key}"`);
 }
 
 export async function getDigest(date: string, period: string): Promise<NewsDigest | null> {
-  return kvGet<NewsDigest>(digestKey(date, period));
+  const key = digestKey(date, period);
+  const result = await kvGet<NewsDigest>(key);
+  console.log(`[storage] getDigest key="${key}" — ${result ? `found (${result.stories.length} stories)` : "not found"}`);
+  return result;
 }
 
 export async function getRecentDigests(days = 7): Promise<NewsDigest[]> {

@@ -13,7 +13,11 @@ const client = new Anthropic({
 export async function aggregateNewsStories(
   articles: RawArticle[]
 ): Promise<AggregatedStory[]> {
-  if (articles.length === 0) return [];
+  console.log(`[claude] aggregateNewsStories called with ${articles.length} articles`);
+  if (articles.length === 0) {
+    console.warn("[claude] No articles to aggregate — returning empty");
+    return [];
+  }
 
   // Format articles for the prompt, including content when available
   const articlesText = articles
@@ -74,12 +78,14 @@ IMPORTANT GUIDELINES:
 - Do not fabricate information. Only use what's in the provided articles.
 - Return ONLY the JSON array, no other text.`;
 
-  console.log(`[claude] Aggregating ${articles.length} articles...`);
+  console.log(`[claude] Sending ${Math.min(articles.length, 50)} articles to Claude for aggregation...`);
   const message = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 8192,
     messages: [{ role: "user", content: prompt }],
   });
+
+  console.log(`[claude] Aggregation response: stop_reason=${message.stop_reason}, usage: input=${message.usage.input_tokens} output=${message.usage.output_tokens}`);
 
   const content = message.content[0];
   if (content.type !== "text") {
@@ -96,7 +102,7 @@ IMPORTANT GUIDELINES:
       throw new Error("Aggregation response did not contain a JSON array");
     }
     const stories = JSON.parse(jsonMatch[0]) as AggregatedStory[];
-    console.log(`[claude] Aggregated into ${stories.length} stories`);
+    console.log(`[claude] Aggregated into ${stories.length} stories: ${stories.map((s) => s.headline).join(" | ")}`);
     return stories;
   } catch (e) {
     console.error("[claude] Failed to parse Claude response:", e);
