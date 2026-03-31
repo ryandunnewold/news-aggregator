@@ -18,9 +18,12 @@ interface SearchQuery {
  * and returns the results as RawArticle[].
  */
 export async function searchTopStories(): Promise<RawArticle[]> {
+  console.log("[news] searchTopStories called");
+
   // Load recent feedback to avoid topics the user doesn't care about
   const feedback = await getRecentFeedback(30);
   const rejectedTopics = feedback.map((f) => f.headline).slice(0, 20);
+  console.log(`[news] Loaded ${feedback.length} feedback entries, ${rejectedTopics.length} rejected topics`);
 
   let avoidClause = "";
   if (rejectedTopics.length > 0) {
