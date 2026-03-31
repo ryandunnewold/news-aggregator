@@ -24,7 +24,7 @@ Steer away from these subjects unless there is a truly major breaking developmen
   }
 
   const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
+    model: "claude-sonnet-4-5-20250514",
     max_tokens: 8192,
     tools: [
       {
@@ -69,8 +69,9 @@ IMPORTANT:
     ],
   });
 
-  // Extract the text response (after web search tool use)
-  const textBlock = response.content.find((block) => block.type === "text");
+  // Extract the last text block (the JSON array comes after web search tool uses)
+  const textBlocks = response.content.filter((block) => block.type === "text");
+  const textBlock = textBlocks[textBlocks.length - 1];
   if (!textBlock || textBlock.type !== "text") return [];
 
   try {
