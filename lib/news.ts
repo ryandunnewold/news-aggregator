@@ -85,9 +85,9 @@ ${rejectedTopics.map((t) => `- "${t}"`).join("\n")}
 Steer away from these subjects unless there is a truly major breaking development.`;
   }
 
-  console.log("[news] Sending web search request to Claude Haiku...");
+  console.log("[news] Sending web search request to Claude Sonnet...");
   const response = await client.messages.create({
-    model: "claude-sonnet-4-5-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 16384,
     tools: [
       {
