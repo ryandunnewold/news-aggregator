@@ -65,6 +65,20 @@ interface StoryReaderProps {
 export function StoryReader({ digests: initialDigests, onDigestChange }: StoryReaderProps) {
   const [digests, setDigests] = useState(initialDigests);
   const [briefingIndex, setBriefingIndex] = useState(0);
+  const [storyIndex, setStoryIndex] = useState(() => {
+    // Start at the first unread story on initial load
+    const digest = initialDigests[0];
+    if (!digest) return 0;
+    const stories = storiesForDigest(digest);
+    try {
+      const saved = JSON.parse(localStorage.getItem(READ_KEY) ?? "[]") as string[];
+      const readSet = new Set(saved);
+      const idx = stories.findIndex((s) => !readSet.has(s.id));
+      return idx === -1 ? stories.length : idx;
+    } catch {
+      return 0;
+    }
+  });
 
   // Recheck for new digests when the tab/window regains focus
   useEffect(() => {
@@ -104,12 +118,10 @@ export function StoryReader({ digests: initialDigests, onDigestChange }: StoryRe
     [currentDigest]
   );
 
-  const unreadInBriefing = useMemo(
-    () => currentStories.filter((s) => !readIds.has(s.id)),
-    [currentStories, readIds]
-  );
-
-  const currentStory = unreadInBriefing[0] ?? null;
+  // The displayed story comes from the explicit index.
+  // If storyIndex is past the end, all stories are done (briefing complete).
+  const currentStory = currentStories[storyIndex] ?? null;
+  const briefingComplete = currentStories.length > 0 && storyIndex >= currentStories.length;
 
   const hasNextBriefing = briefingIndex < digests.length - 1;
 
@@ -127,10 +139,19 @@ export function StoryReader({ digests: initialDigests, onDigestChange }: StoryRe
   const navigateToBriefing = useCallback(
     (index: number) => {
       setBriefingIndex(index);
+      // Start at the first unread story in the new briefing
+      const digest = digests[index];
+      if (digest) {
+        const stories = storiesForDigest(digest);
+        const idx = stories.findIndex((s) => !readIds.has(s.id));
+        setStoryIndex(idx === -1 ? stories.length : idx);
+      } else {
+        setStoryIndex(0);
+      }
       onDigestChange?.(digests[index] ?? null);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
-    [digests, onDigestChange]
+    [digests, readIds, onDigestChange]
   );
 
   const handleMarkRead = useCallback(() => {
@@ -138,12 +159,19 @@ export function StoryReader({ digests: initialDigests, onDigestChange }: StoryRe
     const next = new Set(readIds);
     next.add(currentStory.id);
     writeReadIds(next);
+    setStoryIndex((i) => i + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStory, readIds]);
 
   const handleSkip = useCallback(() => {
     handleMarkRead();
   }, [handleMarkRead]);
+
+  const handlePrevious = useCallback(() => {
+    if (storyIndex <= 0) return;
+    setStoryIndex((i) => i - 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [storyIndex]);
 
   const handleNotInteresting = useCallback(async () => {
     if (!currentStory) return;
@@ -168,6 +196,7 @@ export function StoryReader({ digests: initialDigests, onDigestChange }: StoryRe
     const next = new Set(readIds);
     for (const s of currentStories) next.add(s.id);
     writeReadIds(next);
+    setStoryIndex(currentStories.length);
   }, [currentStories, readIds]);
 
   const handleMarkAllReadAndDismiss = useCallback(() => {
@@ -197,8 +226,11 @@ export function StoryReader({ digests: initialDigests, onDigestChange }: StoryRe
 
   const handleReset = useCallback(() => {
     writeReadIds(new Set());
-    navigateToBriefing(0);
-  }, [navigateToBriefing]);
+    setBriefingIndex(0);
+    setStoryIndex(0);
+    onDigestChange?.(digests[0] ?? null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [digests, onDigestChange]);
 
   const allStoriesAllDigests = useMemo(
     () => digests.flatMap((d) => storiesForDigest(d)),
@@ -226,7 +258,7 @@ export function StoryReader({ digests: initialDigests, onDigestChange }: StoryRe
   }
 
   // Current briefing complete but more briefings available
-  if (!currentStory && currentDigest) {
+  if (briefingComplete && currentDigest) {
     return (
       <BriefingComplete
         digest={currentDigest}
@@ -246,13 +278,14 @@ export function StoryReader({ digests: initialDigests, onDigestChange }: StoryRe
     <StoryNarrativeView
       key={currentStory.id}
       story={currentStory.story}
-      storyIndex={currentStories.length - unreadInBriefing.length}
+      storyIndex={storyIndex}
       totalStories={currentStories.length}
       digestDate={currentStory.digestDate}
       digestPeriod={currentStory.digestPeriod}
       onMarkRead={handleMarkRead}
       onSkip={handleSkip}
       onNotInteresting={handleNotInteresting}
+      onPrevious={storyIndex > 0 ? handlePrevious : undefined}
       onMarkAllRead={handleMarkAllRead}
     />
   );

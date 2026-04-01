@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, ThumbsDown } from "lucide-react";
+import { ExternalLink, ChevronLeft, ThumbsDown } from "lucide-react";
 import type { AggregatedStory, DigestPeriod } from "@/lib/types";
 import { PERIOD_LABELS, PERIOD_SYMBOLS } from "@/lib/types";
 import { format, parseISO } from "date-fns";
@@ -15,6 +15,7 @@ interface StoryNarrativeViewProps {
   onMarkRead: () => void;
   onSkip: () => void;
   onNotInteresting: () => void;
+  onPrevious?: () => void;
   onMarkAllRead?: () => void;
 }
 
@@ -70,6 +71,7 @@ export function StoryNarrativeView({
   onMarkRead,
   onSkip,
   onNotInteresting,
+  onPrevious,
   onMarkAllRead,
 }: StoryNarrativeViewProps) {
   const formattedDate = format(parseISO(digestDate), "MMMM d, yyyy");
@@ -357,6 +359,36 @@ export function StoryNarrativeView({
             gap: "12px",
           }}
         >
+          {onPrevious && (
+            <button
+              onClick={onPrevious}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#9e9a90",
+                background: "transparent",
+                border: "1px solid #e8e4dc",
+                borderRadius: "100px",
+                padding: "10px 16px",
+                cursor: "pointer",
+                transition: "border-color 0.2s ease, color 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#9e9a90";
+                e.currentTarget.style.color = "#1a1a18";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#e8e4dc";
+                e.currentTarget.style.color = "#9e9a90";
+              }}
+            >
+              <ChevronLeft style={{ width: "14px", height: "14px" }} />
+              Previous
+            </button>
+          )}
           <button
             onClick={onNotInteresting}
             title="Not interesting — future digests will avoid similar topics"
