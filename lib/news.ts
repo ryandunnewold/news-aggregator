@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { RawArticle } from "./types";
 import { getRecentFeedback } from "./storage";
 import { braveNewsSearch } from "./brave";
+import { getTodayInUserTZ, USER_TIMEZONE } from "./timezone";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -19,6 +20,7 @@ interface SearchQuery {
  */
 export async function searchTopStories(): Promise<RawArticle[]> {
   console.log("[news] searchTopStories called");
+  const today = getTodayInUserTZ();
 
   // Load recent feedback to avoid topics the user doesn't care about
   const feedback = await getRecentFeedback(30);
@@ -34,7 +36,7 @@ Steer away from these subjects unless there is a truly major breaking developmen
 
   // Step 1: Ask Claude to generate search queries for today's top stories
   console.log("[news] Asking Claude to generate search queries...");
-  const queries = await generateSearchQueries(avoidClause);
+  const queries = await generateSearchQueries(today, avoidClause);
   console.log(`[news] Claude generated ${queries.length} search queries`);
 
   // Step 2: Execute each query via Brave Search API
@@ -59,7 +61,7 @@ Steer away from these subjects unless there is a truly major breaking developmen
           content: result.description, // Brave provides description/snippet
           url: result.url,
           urlToImage: result.thumbnail?.src ?? null,
-          publishedAt: new Date().toISOString(),
+          publishedAt: result.publishedAt ?? new Date().toISOString(),
           source: {
             id: null,
             name: extractSourceName(result.url),
@@ -82,6 +84,7 @@ Steer away from these subjects unless there is a truly major breaking developmen
  * Uses Claude to generate search queries for discovering today's top news stories.
  */
 async function generateSearchQueries(
+  today: string,
   avoidClause: string
 ): Promise<SearchQuery[]> {
   const response = await client.messages.create({
@@ -90,7 +93,7 @@ async function generateSearchQueries(
     messages: [
       {
         role: "user",
-        content: `You are a news editor planning today's coverage. Generate search queries to find the top 10 most important and newsworthy stories happening right now.
+        content: `You are a news editor planning a digest for ${today} in ${USER_TIMEZONE}. Generate search queries to find the top 10 most important and newsworthy stories happening right now.
 
 Think about what's likely making headlines today across politics, business, technology, science, health, world affairs, culture, sports, environment, or any other significant topic.
 
@@ -98,7 +101,9 @@ Do NOT limit yourself to one story per topic. If 3 of the top stories are about 
 
 Exclude video game and gaming news unless it has major business or cultural significance.${avoidClause}
 
-For each story, provide a focused search query that will find recent news articles about it.
+Only include stories with a real current development on ${today} or in the last 24 hours. Do not include evergreen explainers, trend pieces, anniversary coverage, previews, or older stories that are merely still being discussed unless there is a concrete new development right now.
+
+For each story, provide a focused search query that will find latest/current news coverage about that specific development.
 
 Return a JSON array with exactly 10 objects, each with:
 {
@@ -108,7 +113,9 @@ Return a JSON array with exactly 10 objects, each with:
 
 IMPORTANT:
 - Make queries specific enough to find relevant articles
-- Include time-relevant terms like "today", "latest", "2026" where appropriate
+- Bias toward major breaking developments and same-day updates
+- Include time-relevant terms like "today", "latest", "breaking", "${today}", and "2026" where appropriate
+- Avoid wording that would pull in general background or loosely recent coverage
 - Cover diverse topics — not all politics or all tech
 - Return ONLY the JSON array, no other text`,
       },

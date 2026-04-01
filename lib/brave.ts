@@ -9,6 +9,7 @@ export interface BraveSearchResult {
   description: string;
   age?: string;
   page_age?: string;
+  publishedAt?: string;
   thumbnail?: { src: string };
 }
 
@@ -67,7 +68,7 @@ export async function braveNewsSearch(
 
   const data = (await response.json()) as BraveWebSearchResponse;
 
-  // Combine news and web results, preferring news
+  // Combine news and web results, preferring news and fresher coverage.
   const results: BraveSearchResult[] = [];
 
   if (data.news?.results) {
@@ -77,6 +78,7 @@ export async function braveNewsSearch(
         url: r.url,
         description: r.description,
         age: r.age,
+        publishedAt: parseBravePublishedAt(r.age),
         thumbnail: r.thumbnail,
       });
     }
@@ -86,10 +88,60 @@ export async function braveNewsSearch(
     for (const r of data.web.results) {
       // Avoid duplicates by URL
       if (!results.some((existing) => existing.url === r.url)) {
-        results.push(r);
+        results.push({
+          ...r,
+          publishedAt: parseBravePublishedAt(r.age ?? r.page_age),
+        });
       }
     }
   }
 
-  return results.slice(0, count);
+  return results
+    .sort(compareByFreshness)
+    .slice(0, count);
+}
+
+function compareByFreshness(a: BraveSearchResult, b: BraveSearchResult): number {
+  const aTime = getFreshnessTimestamp(a);
+  const bTime = getFreshnessTimestamp(b);
+  return bTime - aTime;
+}
+
+function getFreshnessTimestamp(result: BraveSearchResult): number {
+  if (!result.publishedAt) return 0;
+
+  const timestamp = Date.parse(result.publishedAt);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function parseBravePublishedAt(value?: string): string | undefined {
+  if (!value) return undefined;
+
+  const parsedAbsolute = Date.parse(value);
+  if (!Number.isNaN(parsedAbsolute)) {
+    return new Date(parsedAbsolute).toISOString();
+  }
+
+  const relativeMatch = value
+    .trim()
+    .toLowerCase()
+    .match(/^(\d+)\s+(minute|minutes|hour|hours|day|days)\s+ago$/);
+
+  if (!relativeMatch) return undefined;
+
+  const amount = Number.parseInt(relativeMatch[1], 10);
+  const unit = relativeMatch[2];
+
+  if (Number.isNaN(amount)) return undefined;
+
+  const publishedAt = new Date();
+  if (unit.startsWith("minute")) {
+    publishedAt.setMinutes(publishedAt.getMinutes() - amount);
+  } else if (unit.startsWith("hour")) {
+    publishedAt.setHours(publishedAt.getHours() - amount);
+  } else if (unit.startsWith("day")) {
+    publishedAt.setDate(publishedAt.getDate() - amount);
+  }
+
+  return publishedAt.toISOString();
 }
