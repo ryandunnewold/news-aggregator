@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, ChevronDown, ChevronUp, ThumbsDown } from "lucide-react";
+import { ExternalLink, ThumbsDown } from "lucide-react";
 import type { AggregatedStory, DigestPeriod } from "@/lib/types";
 import { PERIOD_LABELS, PERIOD_SYMBOLS } from "@/lib/types";
 import { format, parseISO } from "date-fns";
@@ -122,16 +122,13 @@ export function StoryNarrativeView({
         </div>
       </div>
 
-      {/* ── Intro with inline key facts ── */}
-      <section
+      {/* ── Article content ── */}
+      <article
         style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textAlign: "center",
-          padding: "48px 0 56px",
+          padding: "48px 0 0",
         }}
       >
+        {/* Headline */}
         <Reveal delay={80}>
           <h1
             style={{
@@ -140,29 +137,24 @@ export function StoryNarrativeView({
               fontWeight: 400,
               lineHeight: 1.25,
               color: "#1a1a18",
-              marginBottom: "28px",
+              marginBottom: "16px",
               letterSpacing: "-0.01em",
-              maxWidth: "720px",
             }}
           >
             {story.headline}
           </h1>
         </Reveal>
 
-        <Reveal delay={160}>
+        {/* Byline / source count */}
+        <Reveal delay={140}>
           <div
             style={{
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
-              gap: "6px",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "#6b6860",
-              background: "#ffffff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "100px",
-              padding: "6px 16px",
+              gap: "8px",
               marginBottom: "32px",
+              paddingBottom: "24px",
+              borderBottom: "1px solid #e8e4dc",
             }}
           >
             <span
@@ -174,96 +166,117 @@ export function StoryNarrativeView({
                 display: "inline-block",
               }}
             />
-            {story.sources.length} source{story.sources.length !== 1 ? "s" : ""} analyzed
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#6b6860",
+              }}
+            >
+              {story.sources.length} source{story.sources.length !== 1 ? "s" : ""} analyzed
+            </span>
           </div>
         </Reveal>
 
-        <Reveal delay={240}>
+        {/* Summary / lede */}
+        <Reveal delay={200}>
           <p
             style={{
               fontSize: "17px",
-              lineHeight: 1.7,
-              color: "#6b6860",
-              maxWidth: "600px",
+              lineHeight: 1.75,
+              color: "#3d3d3a",
+              marginBottom: "36px",
             }}
           >
             {story.summary}
           </p>
         </Reveal>
 
-        {/* Expandable Key Facts */}
+        {/* Key Facts — always visible, integrated */}
         {story.keyFacts.length > 0 && (
-          <Reveal delay={320}>
-            <ExpandableSection
-              title={`${story.keyFacts.length} Key Fact${story.keyFacts.length !== 1 ? "s" : ""}`}
-              defaultOpen={false}
-              style={{ maxWidth: "560px", marginTop: "32px", textAlign: "left" }}
+          <Reveal delay={280}>
+            <div
+              style={{
+                borderLeft: "3px solid #2a9d5c",
+                paddingLeft: "20px",
+                marginBottom: "40px",
+              }}
             >
-              {story.keyFacts.map((fact, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    padding: "8px 0",
-                    borderBottom: i < story.keyFacts.length - 1 ? "1px solid #f0ece4" : "none",
-                  }}
-                >
-                  <span
+              <h2
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "#6b6860",
+                  marginBottom: "12px",
+                }}
+              >
+                Key Facts
+              </h2>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {story.keyFacts.map((fact, i) => (
+                  <li
+                    key={i}
                     style={{
-                      flexShrink: 0,
-                      width: "18px",
-                      height: "18px",
-                      borderRadius: "50%",
-                      background: "#e8f5ee",
-                      color: "#2a9d5c",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      marginTop: "2px",
+                      fontSize: "15px",
+                      lineHeight: 1.6,
+                      color: "#1a1a18",
+                      padding: "6px 0",
+                      borderBottom: i < story.keyFacts.length - 1 ? "1px solid #f0ece4" : "none",
                     }}
                   >
-                    ✓
-                  </span>
-                  <span style={{ fontSize: "14px", lineHeight: 1.5, color: "#1a1a18" }}>
                     {fact}
-                  </span>
-                </div>
-              ))}
-            </ExpandableSection>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </Reveal>
         )}
 
-        {/* Expandable Perspectives */}
+        {/* Perspectives — always visible, newspaper style */}
         {story.perspectives.length > 0 && (
-          <Reveal delay={400}>
-            <ExpandableSection
-              title={`${story.perspectives.length} Perspective${story.perspectives.length !== 1 ? "s" : ""}`}
-              defaultOpen={false}
-              style={{ maxWidth: "560px", marginTop: "16px", textAlign: "left" }}
+          <Reveal delay={360}>
+            <div
+              style={{
+                borderTop: "2px solid #1a1a18",
+                paddingTop: "20px",
+                marginBottom: "40px",
+              }}
             >
+              <h2
+                style={{
+                  fontFamily: "Georgia, 'Times New Roman', serif",
+                  fontSize: "20px",
+                  fontWeight: 400,
+                  color: "#1a1a18",
+                  marginBottom: "20px",
+                }}
+              >
+                How Different Sources Covered It
+              </h2>
               {story.perspectives.map((perspective, i) => (
                 <div
                   key={i}
                   style={{
-                    padding: "12px 0",
-                    borderBottom: i < story.perspectives.length - 1 ? "1px solid #f0ece4" : "none",
+                    padding: "16px 0",
+                    borderBottom: i < story.perspectives.length - 1 ? "1px solid #e8e4dc" : "none",
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      marginBottom: "6px",
+                      alignItems: "baseline",
+                      gap: "10px",
+                      marginBottom: "8px",
+                      flexWrap: "wrap",
                     }}
                   >
                     <span
                       style={{
-                        fontSize: "13px",
-                        fontWeight: 600,
+                        fontFamily: "Georgia, 'Times New Roman', serif",
+                        fontSize: "16px",
+                        fontWeight: 700,
                         color: "#1a1a18",
                       }}
                     >
@@ -271,7 +284,7 @@ export function StoryNarrativeView({
                     </span>
                     <span
                       style={{
-                        fontSize: "10px",
+                        fontSize: "11px",
                         fontWeight: 600,
                         letterSpacing: "0.06em",
                         textTransform: "uppercase",
@@ -279,7 +292,7 @@ export function StoryNarrativeView({
                         borderRadius: "100px",
                         border: "1px solid #e8e4dc",
                         color: "#6b6860",
-                        background: "#ffffff",
+                        background: "#faf8f4",
                       }}
                     >
                       {perspective.label}
@@ -292,21 +305,21 @@ export function StoryNarrativeView({
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "3px",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         color: "#9e9a90",
                         textDecoration: "none",
                         marginLeft: "auto",
                       }}
                     >
-                      Source
-                      <ExternalLink style={{ width: "10px", height: "10px" }} />
+                      Read source
+                      <ExternalLink style={{ width: "11px", height: "11px" }} />
                     </a>
                   </div>
                   <p
                     style={{
-                      fontSize: "14px",
-                      lineHeight: 1.6,
-                      color: "#6b6860",
+                      fontSize: "15px",
+                      lineHeight: 1.65,
+                      color: "#3d3d3a",
                       margin: 0,
                     }}
                   >
@@ -314,10 +327,10 @@ export function StoryNarrativeView({
                   </p>
                 </div>
               ))}
-            </ExpandableSection>
+            </div>
           </Reveal>
         )}
-      </section>
+      </article>
 
       {/* ── Sticky footer ── */}
       <div
@@ -445,61 +458,6 @@ export function StoryNarrativeView({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-interface ExpandableSectionProps {
-  title: string;
-  defaultOpen: boolean;
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-}
-
-function ExpandableSection({ title, defaultOpen, children, style }: ExpandableSectionProps) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <div style={style}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          width: "100%",
-          background: open ? "#faf8f4" : "#ffffff",
-          border: "1px solid #e8e4dc",
-          borderRadius: open ? "10px 10px 0 0" : "10px",
-          padding: "12px 16px",
-          cursor: "pointer",
-          transition: "all 0.2s ease",
-          fontSize: "13px",
-          fontWeight: 600,
-          color: "#1a1a18",
-          letterSpacing: "0.02em",
-        }}
-      >
-        {open ? (
-          <ChevronUp style={{ width: "14px", height: "14px", color: "#6b6860" }} />
-        ) : (
-          <ChevronDown style={{ width: "14px", height: "14px", color: "#6b6860" }} />
-        )}
-        {title}
-      </button>
-      {open && (
-        <div
-          style={{
-            border: "1px solid #e8e4dc",
-            borderTop: "none",
-            borderRadius: "0 0 10px 10px",
-            padding: "8px 16px 16px",
-            background: "#ffffff",
-          }}
-        >
-          {children}
-        </div>
-      )}
     </div>
   );
 }
