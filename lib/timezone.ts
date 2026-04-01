@@ -1,5 +1,9 @@
 // The user's local timezone for scheduling digests
 export const USER_TIMEZONE = "America/Chicago";
+export const PERIOD_TRIGGER_HOURS = {
+  morning: 7,
+  evening: 14,
+} as const;
 
 /**
  * Get the current date in the user's timezone (YYYY-MM-DD format).
@@ -42,4 +46,15 @@ export function getHourInUserTZ(date = new Date()): number {
   // "en-US" with hour12: false returns "24" for midnight; normalize to 0
   const hour = parseInt(formatted, 10);
   return hour === 24 ? 0 : hour;
+}
+
+/**
+ * Check whether the current local hour matches the scheduled trigger hour
+ * for the requested digest period.
+ */
+export function isExpectedTriggerHour(
+  period: keyof typeof PERIOD_TRIGGER_HOURS,
+  date = new Date()
+): boolean {
+  return getHourInUserTZ(date) === PERIOD_TRIGGER_HOURS[period];
 }
