@@ -74,7 +74,7 @@ curl -X POST http://localhost:3000/api/digest \
 4. Create a KV store and link it to the project
 5. Deploy
 
-The `vercel.json` cron configuration schedules both CST and CDT UTC hours for each digest. The digest deduplicates automatically — if one already exists for the date/period, the second cron hit returns the cached version.
+The `vercel.json` cron configuration schedules both CST and CDT UTC hours for each digest. Each cron route also checks the current `America/Chicago` hour before running, and the digest deduplicates automatically if a second valid hit reaches the same date/period.
 
 ## Cron Schedule
 
