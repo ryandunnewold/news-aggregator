@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NewsLens",
   description:
-    "AI-aggregated news from diverse sources, delivered three times a day with balanced perspectives.",
+    "AI-aggregated news from diverse sources, delivered on demand with balanced perspectives.",
 };
 
 function getFormattedDate() {

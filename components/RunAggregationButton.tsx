@@ -15,7 +15,7 @@ export function RunAggregationButton() {
 
       if (data.success) {
         toast.success(
-          `Aggregation complete — ${data.storiesGenerated} stories generated (${data.period})`
+          `Briefing refreshed — ${data.storiesGenerated} ${data.storiesGenerated === 1 ? "story" : "stories"} generated`
         );
         window.location.reload();
       } else {

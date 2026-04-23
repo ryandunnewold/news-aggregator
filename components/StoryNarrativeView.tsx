@@ -101,7 +101,7 @@ export function StoryNarrativeView({
           }}
         >
           <span style={{ fontWeight: 500, color: "#6b6860" }}>
-            Latest Briefing
+            Your Briefing
           </span>
           <span>&middot;</span>
           <span>{formattedDate}</span>
@@ -387,7 +387,7 @@ export function StoryNarrativeView({
           )}
           <button
             onClick={onNotInteresting}
-            title="Not interesting — future digests will avoid similar topics"
+            title="Not interesting — future briefings will avoid similar topics"
             style={{
               display: "inline-flex",
               alignItems: "center",
