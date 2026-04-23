@@ -49,7 +49,7 @@ export default async function HomePage() {
           </div>
           <p style={{ fontSize: "13px", color: "#9e9a90", margin: 0 }}>
             {digest
-              ? `${digest.stories.length} ${digest.stories.length === 1 ? "story" : "stories"} in the latest briefing`
+              ? `${digest.stories.length} ${digest.stories.length === 1 ? "story" : "stories"} in your briefing`
               : "AI-aggregated news from diverse sources — factual, balanced, unbiased."}
           </p>
         </div>

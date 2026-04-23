@@ -81,10 +81,10 @@ export default function SettingsPage() {
           </div>
           <div style={{ padding: "20px 24px" }}>
             <p style={{ fontSize: "14px", color: "#6b6860", margin: 0, lineHeight: 1.65 }}>
-              When you visit NewsLens and the latest briefing is more than 6 hours old
-              (or none exists yet), a fresh one is pulled automatically. Only the most
-              recent briefing is kept &mdash; older digests are replaced, not archived.
-              You can also trigger a regeneration manually with the{" "}
+              There is only ever one briefing. When you visit NewsLens and that briefing
+              is more than 6 hours old (or none exists yet), a fresh one is pulled
+              automatically and replaces the previous one &mdash; nothing is archived. You
+              can also trigger a regeneration manually with the{" "}
               <strong style={{ color: "#1a1a18" }}>&ldquo;Run Now&rdquo;</strong> button on the home page.
             </p>
           </div>
@@ -115,7 +115,7 @@ export default function SettingsPage() {
               { n: "1", title: "Search", body: "AI searches the web for the most significant news stories happening right now across all topics." },
               { n: "2", title: "Aggregate", body: "Claude AI groups articles into story clusters and identifies the key facts, filtering out editorial opinion." },
               { n: "3", title: "Balance", body: "For each story, Claude surfaces perspectives from different viewpoints so you see the full picture." },
-              { n: "4", title: "Learn", body: "Mark stories as “not interesting” and future digests will avoid similar topics." },
+              { n: "4", title: "Learn", body: "Mark stories as “not interesting” and future briefings will avoid similar topics." },
             ].map((step) => (
               <div key={step.n} style={{ display: "flex", gap: "14px" }}>
                 <span

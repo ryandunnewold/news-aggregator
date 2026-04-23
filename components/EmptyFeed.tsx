@@ -41,8 +41,8 @@ export function EmptyFeed({ variant = "no-digests", totalRead = 0, onReset }: Em
           }}
         >
           {totalRead > 0
-            ? `You've read all ${totalRead} ${totalRead === 1 ? "story" : "stories"} in the latest briefing. A fresh briefing is generated whenever you return and the latest is more than 6 hours old.`
-            : "You've read all the stories in the latest briefing."}
+            ? `You've read all ${totalRead} ${totalRead === 1 ? "story" : "stories"} in your briefing. A fresh briefing is generated whenever you return and the current one is more than 6 hours old.`
+            : "You've read all the stories in your briefing."}
         </p>
         {onReset && (
           <button

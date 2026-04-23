@@ -50,7 +50,7 @@ export function AutoRefreshStaleDigest({ hasExistingDigest }: AutoRefreshStaleDi
           marginBottom: "24px",
         }}
       >
-        Couldn&rsquo;t refresh the latest briefing. Try clicking &ldquo;Run Now&rdquo; above.
+        Couldn&rsquo;t refresh your briefing. Try clicking &ldquo;Run Now&rdquo; above.
       </div>
     );
   }
@@ -82,8 +82,8 @@ export function AutoRefreshStaleDigest({ hasExistingDigest }: AutoRefreshStaleDi
         }}
       />
       {hasExistingDigest
-        ? "The latest briefing is more than 6 hours old — pulling fresh stories now…"
-        : "Generating your first briefing — this can take a minute or two…"}
+        ? "Your briefing is more than 6 hours old — pulling fresh stories now…"
+        : "Generating your briefing — this can take a minute or two…"}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
