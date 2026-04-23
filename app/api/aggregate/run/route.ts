@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { aggregatePhase } from "@/lib/digest";
-import type { DigestPeriod } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 /**
- * Internal endpoint called by cron routes to run the aggregation phase.
- * This gets its own 300s execution budget, separate from the search phase.
+ * Internal endpoint called by /api/aggregate to run the aggregation phase.
+ * Gets its own 300s execution budget, separate from the search phase.
  */
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -15,18 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => ({}));
-  const period = body.period as DigestPeriod;
-  const force = body.force === true;
-
-  if (!period || !["morning", "evening"].includes(period)) {
-    return NextResponse.json(
-      { error: "Invalid period, must be 'morning' or 'evening'" },
-      { status: 400 }
-    );
-  }
-
-  const digest = await aggregatePhase(period, force);
+  const digest = await aggregatePhase();
 
   if (!digest) {
     return NextResponse.json(
@@ -38,7 +26,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     success: true,
     digestId: digest.id,
-    period: digest.period,
     storiesGenerated: digest.stories.length,
   });
 }

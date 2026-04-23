@@ -54,7 +54,7 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Schedule info */}
+        {/* Briefing generation */}
         <div
           style={{
             background: "#ffffff",
@@ -73,38 +73,20 @@ export default function SettingsPage() {
                 marginBottom: "6px",
               }}
             >
-              Digest Schedule
+              How Briefings Are Generated
             </h2>
             <p style={{ fontSize: "13px", color: "#6b6860", margin: 0 }}>
-              News digests are automatically generated twice a day.
+              On demand, not on a schedule.
             </p>
           </div>
-          <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
-            {[
-              { symbol: "\u2600", label: "Morning Briefing", time: "7:00 AM CT", desc: "Start your day with the top overnight and early morning stories." },
-              { symbol: "\u25D1", label: "Afternoon Wrap-Up", time: "2:00 PM CT", desc: "Catch up on the day\u2019s developing stories." },
-            ].map((item) => (
-              <div
-                key={item.label}
-                style={{
-                  display: "flex",
-                  gap: "14px",
-                  padding: "14px",
-                  borderRadius: "8px",
-                  background: "#faf8f4",
-                  alignItems: "flex-start",
-                }}
-              >
-                <span style={{ fontSize: "16px", color: "#9e9a90", marginTop: "1px" }}>{item.symbol}</span>
-                <div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "3px" }}>
-                    <span style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a18" }}>{item.label}</span>
-                    <span style={{ fontSize: "12px", color: "#9e9a90" }}>{item.time}</span>
-                  </div>
-                  <p style={{ fontSize: "13px", color: "#6b6860", margin: 0 }}>{item.desc}</p>
-                </div>
-              </div>
-            ))}
+          <div style={{ padding: "20px 24px" }}>
+            <p style={{ fontSize: "14px", color: "#6b6860", margin: 0, lineHeight: 1.65 }}>
+              When you visit NewsLens and the latest briefing is more than 6 hours old
+              (or none exists yet), a fresh one is pulled automatically. Only the most
+              recent briefing is kept &mdash; older digests are replaced, not archived.
+              You can also trigger a regeneration manually with the{" "}
+              <strong style={{ color: "#1a1a18" }}>&ldquo;Run Now&rdquo;</strong> button on the home page.
+            </p>
           </div>
         </div>
 
@@ -133,7 +115,7 @@ export default function SettingsPage() {
               { n: "1", title: "Search", body: "AI searches the web for the most significant news stories happening right now across all topics." },
               { n: "2", title: "Aggregate", body: "Claude AI groups articles into story clusters and identifies the key facts, filtering out editorial opinion." },
               { n: "3", title: "Balance", body: "For each story, Claude surfaces perspectives from different viewpoints so you see the full picture." },
-              { n: "4", title: "Learn", body: "Mark stories as \u201Cnot interesting\u201D and future digests will avoid similar topics." },
+              { n: "4", title: "Learn", body: "Mark stories as “not interesting” and future digests will avoid similar topics." },
             ].map((step) => (
               <div key={step.n} style={{ display: "flex", gap: "14px" }}>
                 <span

@@ -1,5 +1,3 @@
-export type DigestPeriod = "morning" | "evening";
-
 export interface NewsSource {
   name: string;
   url: string;
@@ -39,7 +37,6 @@ export interface AggregatedStory {
 export interface NewsDigest {
   id: string;
   date: string; // YYYY-MM-DD
-  period: DigestPeriod;
   generatedAt: string; // ISO timestamp
   stories: AggregatedStory[];
 }
@@ -49,18 +46,3 @@ export interface StoryFeedback {
   dismissedAt: string; // ISO timestamp
   digestId: string;
 }
-
-export const PERIOD_LABELS: Record<DigestPeriod, string> = {
-  morning: "Morning Briefing",
-  evening: "Afternoon Wrap-Up",
-};
-
-export const PERIOD_TIMES: Record<DigestPeriod, string> = {
-  morning: "7:00 AM CT",
-  evening: "2:00 PM CT",
-};
-
-export const PERIOD_SYMBOLS: Record<DigestPeriod, string> = {
-  morning: "\u2600",
-  evening: "\u25D1",
-};
