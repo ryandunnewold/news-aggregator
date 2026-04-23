@@ -1,15 +1,24 @@
-import { getRecentDigests } from "@/lib/storage";
+import { getLatestDigest } from "@/lib/storage";
 import { StoryReader } from "@/components/StoryReader";
 import { RunAggregationButton } from "@/components/RunAggregationButton";
+import { AutoRefreshStaleDigest } from "@/components/AutoRefreshStaleDigest";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const STALE_AFTER_MS = 6 * 60 * 60 * 1000;
+
 export default async function HomePage() {
-  const digests = await getRecentDigests(7);
+  const digest = await getLatestDigest();
+  const now = new Date();
+  const isStale =
+    !digest ||
+    now.getTime() - new Date(digest.generatedAt).getTime() >= STALE_AFTER_MS;
 
   return (
     <div>
+      {isStale && <AutoRefreshStaleDigest hasExistingDigest={!!digest} />}
+
       {/* Page header */}
       <div
         style={{
@@ -35,19 +44,19 @@ export default async function HomePage() {
                 margin: 0,
               }}
             >
-              Your Briefings
+              Your Briefing
             </h1>
           </div>
           <p style={{ fontSize: "13px", color: "#9e9a90", margin: 0 }}>
-            {digests.length > 0
-              ? `${digests.length} ${digests.length === 1 ? "briefing" : "briefings"} available`
-              : "AI-aggregated news from diverse sources \u2014 factual, balanced, unbiased."}
+            {digest
+              ? `${digest.stories.length} ${digest.stories.length === 1 ? "story" : "stories"} in the latest briefing`
+              : "AI-aggregated news from diverse sources — factual, balanced, unbiased."}
           </p>
         </div>
         <RunAggregationButton />
       </div>
 
-      <StoryReader digests={digests} />
+      <StoryReader digest={digest} />
     </div>
   );
 }

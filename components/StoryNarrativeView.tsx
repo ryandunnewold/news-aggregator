@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink, ChevronLeft, ThumbsDown } from "lucide-react";
-import type { AggregatedStory, DigestPeriod } from "@/lib/types";
-import { PERIOD_LABELS, PERIOD_SYMBOLS } from "@/lib/types";
+import type { AggregatedStory } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 
 interface StoryNarrativeViewProps {
@@ -11,7 +10,6 @@ interface StoryNarrativeViewProps {
   storyIndex: number;
   totalStories: number;
   digestDate: string;
-  digestPeriod: DigestPeriod;
   onMarkRead: () => void;
   onSkip: () => void;
   onNotInteresting: () => void;
@@ -67,7 +65,6 @@ export function StoryNarrativeView({
   storyIndex,
   totalStories,
   digestDate,
-  digestPeriod,
   onMarkRead,
   onSkip,
   onNotInteresting,
@@ -103,9 +100,8 @@ export function StoryNarrativeView({
             marginBottom: "4px",
           }}
         >
-          <span style={{ fontSize: "15px" }}>{PERIOD_SYMBOLS[digestPeriod]}</span>
           <span style={{ fontWeight: 500, color: "#6b6860" }}>
-            {PERIOD_LABELS[digestPeriod]}
+            Latest Briefing
           </span>
           <span>&middot;</span>
           <span>{formattedDate}</span>

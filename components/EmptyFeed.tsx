@@ -1,5 +1,3 @@
-import { PERIOD_LABELS, PERIOD_TIMES } from "@/lib/types";
-
 interface EmptyFeedProps {
   variant?: "no-digests" | "all-read";
   totalRead?: number;
@@ -20,14 +18,7 @@ export function EmptyFeed({ variant = "no-digests", totalRead = 0, onReset }: Em
           padding: "80px 40px",
         }}
       >
-        <div
-          style={{
-            fontSize: "40px",
-            marginBottom: "24px",
-          }}
-        >
-          ✓
-        </div>
+        <div style={{ fontSize: "40px", marginBottom: "24px" }}>✓</div>
         <p
           style={{
             fontFamily: "Georgia, 'Times New Roman', serif",
@@ -50,57 +41,27 @@ export function EmptyFeed({ variant = "no-digests", totalRead = 0, onReset }: Em
           }}
         >
           {totalRead > 0
-            ? `You've read all ${totalRead} ${totalRead === 1 ? "story" : "stories"} from the latest digests. Check back later for new coverage.`
-            : "You've read all the stories from the latest digests. Check back later for new coverage."}
+            ? `You've read all ${totalRead} ${totalRead === 1 ? "story" : "stories"} in the latest briefing. A fresh briefing is generated whenever you return and the latest is more than 6 hours old.`
+            : "You've read all the stories in the latest briefing."}
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
-          <div
+        {onReset && (
+          <button
+            onClick={onReset}
             style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: "12px",
-              flexWrap: "wrap",
-              marginBottom: "8px",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#9e9a90",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "8px",
+              textDecoration: "underline",
+              textDecorationColor: "#e8e4dc",
             }}
           >
-            {(["morning", "evening"] as const).map((period) => (
-              <div
-                key={period}
-                style={{
-                  padding: "10px 18px",
-                  borderRadius: "100px",
-                  border: "1px solid #e8e4dc",
-                  background: "#ffffff",
-                }}
-              >
-                <span style={{ fontSize: "12px", fontWeight: 600, color: "#1a1a18", display: "block" }}>
-                  {PERIOD_LABELS[period]}
-                </span>
-                <span style={{ fontSize: "11px", color: "#9e9a90" }}>
-                  {PERIOD_TIMES[period]}
-                </span>
-              </div>
-            ))}
-          </div>
-          {onReset && (
-            <button
-              onClick={onReset}
-              style={{
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#9e9a90",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "8px",
-                textDecoration: "underline",
-                textDecorationColor: "#e8e4dc",
-              }}
-            >
-              Mark all as unread
-            </button>
-          )}
-        </div>
+            Mark all as unread
+          </button>
+        )}
       </div>
     );
   }
@@ -123,39 +84,12 @@ export function EmptyFeed({ variant = "no-digests", totalRead = 0, onReset }: Em
           fontWeight: 400,
         }}
       >
-        No digests yet
+        No briefing yet
       </p>
-      <p style={{ fontSize: "14px", color: "#6b6860", marginBottom: "32px", maxWidth: "360px", margin: "0 auto 32px" }}>
-        News digests are automatically generated three times a day. The first
-        digest will appear here once generated.
+      <p style={{ fontSize: "14px", color: "#6b6860", maxWidth: "360px", margin: "0 auto" }}>
+        A fresh briefing is generated on demand. Click &ldquo;Run Now&rdquo; to pull the latest
+        top stories.
       </p>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "12px",
-          flexWrap: "wrap",
-        }}
-      >
-        {(["morning", "evening"] as const).map((period) => (
-          <div
-            key={period}
-            style={{
-              padding: "10px 18px",
-              borderRadius: "100px",
-              border: "1px solid #e8e4dc",
-              background: "#ffffff",
-            }}
-          >
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#1a1a18", display: "block" }}>
-              {PERIOD_LABELS[period]}
-            </span>
-            <span style={{ fontSize: "11px", color: "#9e9a90" }}>
-              {PERIOD_TIMES[period]}
-            </span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
