@@ -2,6 +2,7 @@ import { getLatestDigest } from "@/lib/storage";
 import { StoryReader } from "@/components/StoryReader";
 import { RunAggregationButton } from "@/components/RunAggregationButton";
 import { AutoRefreshStaleDigest } from "@/components/AutoRefreshStaleDigest";
+import { BriefingGeneratedAt } from "@/components/BriefingGeneratedAt";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -52,6 +53,11 @@ export default async function HomePage() {
               ? `${digest.stories.length} ${digest.stories.length === 1 ? "story" : "stories"} in your briefing`
               : "AI-aggregated news from diverse sources — factual, balanced, unbiased."}
           </p>
+          {digest && (
+            <div style={{ marginTop: "4px" }}>
+              <BriefingGeneratedAt generatedAt={digest.generatedAt} />
+            </div>
+          )}
         </div>
         <RunAggregationButton />
       </div>
